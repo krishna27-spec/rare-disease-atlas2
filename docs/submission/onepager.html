@@ -1,0 +1,68 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Atlas AI: one-page report</title>
+<style>
+  @page { size: A4; margin: 13mm 15mm; }
+  * { box-sizing: border-box; }
+  body { font: 9.6pt/1.42 "Inter", "Helvetica Neue", Arial, sans-serif; color: #1c1a24; margin: 0; }
+  header { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1.5pt solid #5b3fd6; padding-bottom: 5pt; margin-bottom: 8pt; }
+  h1 { font-size: 19pt; margin: 0; letter-spacing: -0.02em; }
+  h1 span { color: #5b3fd6; }
+  header small { color: #5c586b; font-size: 8.6pt; text-align: right; }
+  h2 { font-size: 10.4pt; margin: 9pt 0 3pt; color: #3b2a9a; letter-spacing: 0.01em; }
+  p { margin: 0 0 4pt; }
+  ul { margin: 0; padding-left: 13pt; } li { margin-bottom: 2.2pt; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16pt; }
+  table { border-collapse: collapse; width: 100%; font-size: 9pt; }
+  td { padding: 2.2pt 6pt 2.2pt 0; vertical-align: top; border-bottom: 0.4pt solid #e2def0; }
+  td:first-child { white-space: nowrap; font-weight: 600; color: #2a2740; width: 1%; }
+  .flow { font-size: 8.6pt; color: #3d3a4d; background: #f4f1fc; border-radius: 5pt; padding: 5pt 8pt; margin: 4pt 0 2pt; text-align: center; }
+  .flow b { color: #3b2a9a; }
+  .foot { margin-top: 7pt; padding-top: 5pt; border-top: 0.4pt solid #cfc9e6; font-size: 8.8pt; color: #3d3a4d; }
+</style></head><body>
+<header><h1><span>Atlas AI</span>: a map of rare diseases</h1><small>Hack-Nation Global AI Hackathon · Challenge 05<br>github.com/krishna27-spec/rare-disease-atlas2</small></header>
+
+<h2>Challenge tackled</h2>
+<p>A parent whose child has an untreated rare disease ends up running the research effort: finding similar diseases, existing studies, and people who can help. That knowledge is spread over a dozen databases. We built a knowledge graph of <b>22 rare neurological diseases</b> and a website that takes a patient-group leader from a disease name to related diseases, reusable studies, collaborators and a cited next step. Every link shows its source, and gaps are stated rather than filled.</p>
+
+<h2>Tools and models</h2>
+<table>
+  <tr><td>OpenAI gpt-oss-20b / 120b (via Groq)</td><td>Reads PubMed abstracts and proposes facts; the larger model reviews each fact; it also words the next steps in plain language.</td></tr>
+  <tr><td>Python, pandas, pyarrow</td><td>Joins ten public sources (MONDO, HPO, Orphadata, HGNC, Reactome, Gene Ontology, ClinVar, PubMed, ClinicalTrials.gov, NIH RePORTER) into two parquet files.</td></tr>
+  <tr><td>networkx</td><td>Disease similarity (information-weighted overlap of symptoms and pathways) and Louvain clusters.</td></tr>
+  <tr><td>FastAPI</td><td>Read-only JSON API over the graph; also serves the site.</td></tr>
+  <tr><td>React, Framer Motion, canvas, d3-geo</td><td>The website. The graph and the world map are drawn by hand on canvas.</td></tr>
+</table>
+<div class="flow">public sources → <b>build</b> (join, extract with gpt-oss, verify, review, score) → <b>graph files</b> → API → website</div>
+
+<div class="cols">
+<div>
+<h2>What worked well</h2>
+<ul>
+  <li><b>Evidence on everything.</b> About 4,000 facts, each with source, date and strength. A check script fails the build if one is missing.</li>
+  <li><b>LLM proposes, code verifies.</b> Of 460 facts gpt-oss proposed, 40 were dropped because the quote was not in the abstract. The reviewer then caught real errors, such as a gene attached to the wrong Batten subtype.</li>
+  <li><b>Clusters by mechanism, not by name.</b> The four Sanfilippo types land together through the heparan sulfate pathway.</li>
+  <li><b>Beyond the brief.</b> 1,618 study sites in 54 countries on a world map, milestones toward a treatment, and why earlier trials stopped.</li>
+  <li><b>Runs with one command</b>, no keys.</li>
+</ul>
+</div>
+<div>
+<h2>What was challenging</h2>
+<ul>
+  <li><b>LLM quota.</b> The free tier allows 200,000 tokens a day per model. We lowered reasoning effort (about half the tokens per abstract), alternated two models, and spread reading across diseases. Still only 120 of 712 abstracts were read; the site says so.</li>
+  <li><b>Names that collide.</b> CLN1–CLN8 are also yeast genes; "Batten disease" means seven diseases. We filter on context and never pin a family-level gene statement on one subtype.</li>
+  <li><b>A better signal that made things worse.</b> Adding Gene Ontology to the similarity score split a real cluster, so we use it for navigation only.</li>
+  <li><b>Ranking people.</b> Counting diseases per researcher put someone whose six studies were withdrawn or terminated first. Listed as a known limit.</li>
+</ul>
+</div>
+</div>
+
+<h2>How we spent our time</h2>
+<table>
+  <tr><td>Hours 0–2</td><td>Disease list, biology and research layers, similarity and clusters, first gpt-oss extraction.</td></tr>
+  <tr><td>Hours 2–5</td><td>First app in Streamlit; UI redesign in parallel (intro animation, staged graph); stricter quote checks.</td></tr>
+  <tr><td>Hours 6–8</td><td>Backend rebuilt around an API: provider fallback, second-model review, patient organisations read from their own websites, Gene Ontology.</td></tr>
+  <tr><td>Hours 8–10</td><td>React site: constellation graph, evidence drawer, tabbed disease page, Landscape tab and world map.</td></tr>
+  <tr><td>Last hours</td><td>Documentation for evaluators, fresh-clone test, videos and submission.</td></tr>
+</table>
+
+<div class="foot"><b>Dataset:</b> in the repository under <code>data/</code> (described in <code>data/README.md</code>). <b>If we had 24 more hours,</b> we would read the remaining 590 abstracts on a paid tier, add contradiction cases to the graph, and let a patient group add a disease from the website.</div>
+</body></html>
