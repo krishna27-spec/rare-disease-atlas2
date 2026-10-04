@@ -1,0 +1,9 @@
+Atlas AI: a map of rare diseases where every line shows its source
+
+When a child is diagnosed with a rare disease that has no treatment, the parents become the research team. They know the gene's name. They don't know which other diseases work the same way, whether someone has already built a registry they could use, or who to call. That knowledge exists, but it sits in a dozen databases that don't talk to each other.
+
+We built Atlas AI for those parents. It is a knowledge graph of 22 rare neurological diseases, joined from ten public sources into about 4,000 facts, with a website on top. You type a disease and get four answers: which diseases share its biology and why, what studies and registries already exist, which patient groups and researchers bridge them, and three concrete next steps.
+
+What we're proudest of is that nothing on the screen is unsupported. Click any line on the map and you see where it came from, when, and the exact quoted sentence. OpenAI's gpt-oss reads the papers, but code throws away any fact whose quote isn't really in the abstract, and a second model reviews what's left. When the Atlas doesn't know something, it says so and tells you what was searched.
+
+It runs today with one command and no API keys. Beyond the brief, each disease also gets a world map of study sites, the milestones still missing on the road to a treatment, and the sponsors' own reasons for why earlier trials stopped.
