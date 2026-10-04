@@ -39,8 +39,8 @@ No keys are needed. Without a `.env`, `next-steps` simply returns the cited cand
 | Trial | a registered clinical study | `NCT05825131` | 342 |
 | Asset | something reusable: natural history study, registry | `ASSET:NCT05825131` | 126 |
 | Grant | an NIH-funded project | `R21NS135412` | 233 |
-| Investigator | a researcher or clinician | `CTGOV-INV:…`, `NIHPI:…`, `AUTHOR:…` | 618 |
-| Paper | a PubMed article a fact was read from | `PMID:20650889` | 63 |
+| Investigator | a researcher or clinician | `CTGOV-INV:…`, `NIHPI:…`, `AUTHOR:…` | 606 |
+| Paper | a PubMed article a fact was read from | `PMID:20650889` | 60 |
 | PatientOrg | a patient organisation | `ORG:curesanfilippofoundation.org` | 20 |
 
 There are no "Variant" nodes: each gene carries a count of known disease-causing variants instead.
