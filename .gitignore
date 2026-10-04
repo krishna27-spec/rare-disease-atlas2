@@ -1,0 +1,11 @@
+# Secrets: never commit
+.env
+
+# Big downloads and caches (can be rebuilt)
+data/raw/
+data/cache/
+
+# Python
+.venv/
+__pycache__/
+*.pyc

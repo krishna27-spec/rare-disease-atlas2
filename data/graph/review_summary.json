@@ -1,0 +1,12 @@
+{
+ "verdicts": {
+  "supported": 67,
+  "not_reviewed": 33,
+  "unsupported": 22,
+  "partial": 9
+ },
+ "models": [
+  "openai/gpt-oss-120b",
+  "openai/gpt-oss-20b"
+ ]
+}

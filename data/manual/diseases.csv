@@ -1,0 +1,23 @@
+mondo_id,name,genes,group
+MONDO:0009655,MPS IIIA (Sanfilippo A),SGSH,Sanfilippo
+MONDO:0009656,MPS IIIB (Sanfilippo B),NAGLU,Sanfilippo
+MONDO:0009657,MPS IIIC (Sanfilippo C),HGSNAT,Sanfilippo
+MONDO:0009658,MPS IIID (Sanfilippo D),GNS,Sanfilippo
+MONDO:0009744,CLN1 disease,PPT1,NCL
+MONDO:0008769,CLN2 disease,TPP1,NCL
+MONDO:0008767,CLN3 disease,CLN3,NCL
+MONDO:0009745,CLN5 disease,CLN5,NCL
+MONDO:0011144,CLN6 disease (6A),CLN6,NCL
+MONDO:0012588,CLN7 disease,MFSD8,NCL
+MONDO:0010830,CLN8 disease,CLN8,NCL
+MONDO:0009757,Niemann-Pick type C1,NPC1,Niemann-Pick C
+MONDO:0011873,Niemann-Pick type C2,NPC2,Niemann-Pick C
+MONDO:0018149,GM1 gangliosidosis,GLB1,Gangliosidosis
+MONDO:0010100,Tay-Sachs disease,HEXA,Gangliosidosis
+MONDO:0010006,Sandhoff disease,HEXB,Gangliosidosis
+MONDO:0018868,Metachromatic leukodystrophy,ARSA;PSAP,Leukodystrophy
+MONDO:0009499,Krabbe disease,GALC,Leukodystrophy
+MONDO:0009561,Alpha-mannosidosis,MAN2B1,Other neuronopathic LSD
+MONDO:0009653,Mucolipidosis IV,MCOLN1,Other neuronopathic LSD
+MONDO:0001586,MPS I (Hurler),IDUA,Contrast
+MONDO:0010674,MPS II (Hunter),IDS,Contrast

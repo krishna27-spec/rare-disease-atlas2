@@ -1,0 +1,23 @@
+mondo_id,name,cluster
+MONDO:0008767,CLN3 disease,1
+MONDO:0008769,CLN2 disease,1
+MONDO:0009744,CLN1 disease,1
+MONDO:0009745,CLN5 disease,1
+MONDO:0010830,CLN8 disease,1
+MONDO:0011144,CLN6 disease (6A),1
+MONDO:0012588,CLN7 disease,1
+MONDO:0001586,MPS I (Hurler),2
+MONDO:0009655,MPS IIIA (Sanfilippo A),2
+MONDO:0009656,MPS IIIB (Sanfilippo B),2
+MONDO:0009657,MPS IIIC (Sanfilippo C),2
+MONDO:0009658,MPS IIID (Sanfilippo D),2
+MONDO:0010674,MPS II (Hunter),2
+MONDO:0009499,Krabbe disease,3
+MONDO:0010006,Sandhoff disease,3
+MONDO:0010100,Tay-Sachs disease,3
+MONDO:0018149,GM1 gangliosidosis,3
+MONDO:0018868,Metachromatic leukodystrophy,3
+MONDO:0009757,Niemann-Pick type C1,4
+MONDO:0011873,Niemann-Pick type C2,4
+MONDO:0009561,Alpha-mannosidosis,5
+MONDO:0009653,Mucolipidosis IV,6
