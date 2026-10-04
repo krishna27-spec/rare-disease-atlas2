@@ -40,7 +40,7 @@ Follow Maria, who leads a patient group for **MPS IIIC (Sanfilippo C)**, a disea
 |---|---|---|
 | 1 | Open the site and click **Enter the Atlas** | A DNA helix, one variant, and its signal growing into a network |
 | 2 | Type `sanfilipo c` (typo on purpose) and press Enter | The search still finds MPS IIIC |
-| 3 | Read the **Overview** tab | One paragraph, five numbers, and a tile for each deeper view |
+| 3 | Read the **Overview** tab | One paragraph, three key facts and five numbers. The tabs above go deeper |
 | 4 | Open **Connections** | The map draws itself in stages. Click **Expand connections** to add patient groups and symptoms |
 | 5 | Click any line on the map, or any **Why?** button | A drawer with the source, date, strength and the quoted sentence |
 | 6 | Open **Research** | Existing natural history studies first, then three cited next steps |
@@ -76,7 +76,7 @@ Eight tabs, from least to most detail:
 
 | Tab | What it shows |
 |---|---|
-| **Overview** | One paragraph, three facts a family asks first (how common, age of onset, inheritance), five numbers, and a one-line summary of every other tab |
+| **Overview** | One paragraph, three facts a family asks first (how common, age of onset, inheritance) and five numbers |
 | **Biology** | Disease → gene → mechanisms → symptoms, the most specific first |
 | **Connections** | The map, the related diseases with what is shared and what differs, and the cited path between them |
 | **Research** | Reusable studies and registries, three cited next steps, researchers |

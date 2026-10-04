@@ -5,7 +5,7 @@ import WorldMap from "../components/WorldMap.jsx";
 import { Card, Gap, Limit, Skeletons, Why, pretty } from "../components/ui.jsx";
 import { useApi, useEvidence } from "../hooks.js";
 
-// One disease, seven views of the same Atlas. Overview says the least; each tab goes one step deeper.
+// One disease, eight views of the same Atlas. Overview says the least; each tab goes one step deeper.
 const TABS = [["overview", "Overview"], ["biology", "Biology"], ["connections", "Connections"], ["research", "Research"], ["landscape", "Landscape"], ["communities", "Communities"], ["tenx", "10× route"], ["evidence", "Evidence"]];
 const KIND_ORDER = ["natural history study", "registry", "observational study", "interventional trial"];
 const LAYERS = ["mechanism", "related", "groups", "symptoms"];
@@ -37,20 +37,9 @@ function Org({ o, disease }) {
 }
 
 /* ------------------------------------------------------------------ Overview */
-function Overview({ d, nb, assets, conn, tenx, land, setTab }) {
+function Overview({ d, nb }) {
   const strong = nb ? nb.neighbours.filter((n) => n.supported) : [];
   const genes = d.genes.map((g) => g.gene);
-  const ev = d.counts.edges_by_evidence_type;
-  const nh = assets ? assets.own.filter((a) => a.kind === "natural history study" || a.kind === "registry").length : 0;
-  const tiles = [
-    ["biology", "Biology", `How ${list(genes)} leads to ${plural(d.counts.phenotypes, "recorded symptom")}.`],
-    ["connections", "Connections", strong.length ? `${plural(strong.length, "related disease")} on the map. The closest is ${strong[0].name}.` : "No disease is similar enough to recommend yet."],
-    ["research", "Research", `${plural(d.counts.trials, "study", "studies")} and ${plural(d.counts.grants, "grant")}${nh ? `, including ${plural(nh, "natural history study or registry", "natural history studies and registries")}` : ""}.`],
-    ["landscape", "Landscape", land ? `${land.milestones.reached} of ${land.milestones.of} milestones toward a treatment reached. Studies in ${plural(land.where.n_countries, "country", "countries")}.` : "How common, how far, how funded, and where."],
-    ["communities", "Communities", `${plural(d.patient_orgs.length, "patient organisation")}${conn && conn.n_people ? ` and ${plural(conn.n_people, "researcher")} working across related diseases` : ""}.`],
-    ["tenx", "10× route", tenx ? (tenx.supported ? `${plural(tenx.numbers.own, "natural history study", "natural history studies")} here, ${tenx.numbers.relatives} in close relatives to build on.` : "No study to build on yet. See what is missing.") : "A faster route to a natural history study."],
-    ["evidence", "Evidence", `${(ev.curated || 0) + (ev.text_mined || 0) + (ev.inferred || 0)} facts: ${ev.curated || 0} verified, ${ev.text_mined || 0} from literature, ${ev.inferred || 0} Atlas-derived.`],
-  ];
   return (
     <>
       <p className="lead wide">
@@ -69,15 +58,6 @@ function Overview({ d, nb, assets, conn, tenx, land, setTab }) {
         <div className="stat"><b>{d.counts.grants}</b><span>research grants</span></div>
         <div className="stat"><b>{d.patient_orgs.length}</b><span>patient organisations</span></div>
       </div>
-      <Sec title="Where would you like to go next?">
-        <div className="tiles">
-          {tiles.map(([id, label, text]) => (
-            <button key={id} className="tile" onClick={() => setTab(id)}>
-              <span className="tile-name">{label}</span><span className="tile-text">{text}</span><span className="tile-go" aria-hidden="true">→</span>
-            </button>
-          ))}
-        </div>
-      </Sec>
     </>
   );
 }
@@ -481,7 +461,7 @@ export default function Disease({ id, mode, go }) {
         </div>
       </nav>
       <motion.div key={tab} className="wrap view" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}>
-        {tab === "overview" && <Overview d={d} nb={nb} assets={assets} conn={conn} tenx={tenx} land={land} setTab={setTab} />}
+        {tab === "overview" && <Overview d={d} nb={nb} />}
         {tab === "biology" && <Biology d={d} id={id} />}
         {tab === "connections" && <Connections d={d} id={id} nb={nb} go={go} />}
         {tab === "research" && <Research d={d} id={id} assets={assets} conn={conn} />}
