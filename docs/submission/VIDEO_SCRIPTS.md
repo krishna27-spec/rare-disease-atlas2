@@ -37,19 +37,33 @@ You can read these word for word. The left column is what to do on screen, the r
 
 ---
 
-## Video 2: Tech (60 seconds)
+## Video 2: Tech (under 60 seconds)
 
-*This one explains how it was built. Open the GitHub page of the repository in the browser before you start.*
+*This one explains how it was built: the pipeline from raw data to the website. Open the repository page, https://github.com/krishna27-spec/rare-disease-atlas2, before you start. Everything you need to show is on that one page, so you only scroll.*
 
-| Do this | Say this |
+| Time | Do this | Say this |
+|---|---|---|
+| 0:00–0:11 | Scroll to the diagram under **How it works**. Move the mouse along it from left to right. | "Atlas AI is a knowledge graph with a website on top. Here is the pipeline. Python reads ten public databases and joins them using standard disease and gene I-Ds." |
+| 0:11–0:27 | Scroll to the table **Where gpt-oss is used, and how it is checked**. | "Then OpenAI's G-P-T O-S-S reads research papers and suggests facts. Our code keeps a fact only if the quoted sentence is really in the paper, and a second, larger model reviews it. Every fact is saved with its source, date and confidence." |
+| 0:27–0:40 | Scroll to **Rebuild the dataset** and point at the line of steps (`download → biology → … → check`). | "Next we score how similar the diseases are, group them into clusters, and run a check that fails the build if any fact has no source. A FastAPI server and a React site read the result." |
+| 0:40–0:51 | Scroll to **What it does not do yet**. | "The hard part was the free model quota: two hundred thousand tokens a day. We read 120 of 712 papers, and the site says so." |
+| 0:51–0:57 | Click the **Live site** link at the top, open any disease, click a **Why?** button. | "Our lesson: let the model suggest, and make the code verify." |
+
+**The pipeline in one line, if you want to hold it in your head while talking:**
+public databases → join by ID → gpt-oss reads papers → code checks the quote → second model reviews → similarity and clusters → automatic check → API → website.
+
+**What the words mean**
+
+| Word | Plain meaning |
 |---|---|
-| On the GitHub page, scroll to the diagram under **How it works**. | "Atlas is a knowledge graph. Python collects data from ten public databases and saves it as two small files. A FastAPI server reads those files, and the website is built in React. We drew the graph ourselves on a canvas." |
-| Scroll to the table **Where gpt-oss is used, and how it is checked**. | "The part we care about most is how we use the language model. OpenAI's G-P-T O-S-S reads research papers and suggests facts. But we don't trust it blindly. Our code keeps a fact only if the quoted sentence is really in the paper. Then a second, larger model checks it again. That caught real mistakes." |
-| Scroll to **What it does not do yet**. | "What went wrong: the free plan only gave us two hundred thousand tokens a day. So we read 120 of 712 papers, and the site says that openly." |
-| *(optional)* Stay on the same section. | "We also tried a second biology source for scoring. It made the results worse, so we kept it for navigation only." |
-| Switch to the site and click any **Why?** button so the evidence panel shows. | "What we learned: let the model suggest, and make the code verify. That is how we can show the source for everything." |
-
----
+| Knowledge graph | A list of things (diseases, genes, studies, people) and the facts linking them |
+| Pipeline | The steps that turn raw data into the finished graph, run in order by one command |
+| Standard IDs | Every disease, gene and symptom has an official code, so the same thing from two databases is recognised as one |
+| gpt-oss | OpenAI's open model. We used two sizes: a small one and a larger one |
+| Tokens | Pieces of text the model reads or writes. The free plan limits how many per day |
+| FastAPI | The small server that answers questions about the graph |
+| React | The tool the website is built with |
+| Clusters | Groups of diseases that work in a similar way |
 
 ## Video 3: Team video (about 2 minutes)
 
