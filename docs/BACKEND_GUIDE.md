@@ -105,6 +105,7 @@ Following the flow in the UI spec: **Search → Understand → Connect → Verif
 | **Verify**: contradictions | `GET /contradictions` | pairs of facts that disagree (currently none; the response explains why) |
 | **Act**: existing work to reuse | `GET /disease/{id}/assets` | registries, natural history studies, trials |
 | **Act**: next steps | `GET /disease/{id}/next-steps` | `candidates[]` (always present) and `steps[]` (AI wording, may be empty) |
+| **Landscape**: milestones, world map, trial outcomes, funding | `GET /disease/{id}/landscape` | everything for that tab in one call; `where.cities[]` has `lat`, `lon`, `n_studies`, `recruiting` |
 | "About the data" page | `GET /stats` | counts and the confidence rules |
 
 `type` values in `/graph` nodes are: `centre`, `disease`, `gene`, `pathway`, `symptom`, `patient_org`. Map your icons to these.

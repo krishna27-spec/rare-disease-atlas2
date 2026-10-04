@@ -52,8 +52,18 @@ export default function Search({ onDisease, autoFocus, placeholder = "Search a d
             ))}
             {!rows.length && (
               <div className="empty">
-                <b>Nothing in the Atlas matches “{res.query}”.</b><br />
-                {res.no_match
+                <b>“{res.query}” is not in the Atlas yet.</b><br />
+                {res.known_elsewhere && res.known_elsewhere.length > 0 ? (
+                  <>
+                    It is a known rare disease, just not one of the {res.no_match.searched.diseases} loaded so far:
+                    {res.known_elsewhere.map((k) => (
+                      <div className="elsewhere" key={k.mondo_id}>
+                        <span><b>{k.name}</b>{k.genes.length > 0 && <> · gene {k.genes.slice(0, 3).join(", ")}</>}<br /><span className="sub">{k.mondo_id} · {k.to_add}</span></span>
+                        <a className="chip" href={k.orphanet_url} target="_blank" rel="noreferrer">Orphanet ↗</a>
+                      </div>
+                    ))}
+                  </>
+                ) : res.no_match
                   ? <>That means it is outside what has been loaded, not that nothing is known. We searched {res.no_match.searched.diseases} diseases, {res.no_match.searched.genes} genes, {res.no_match.searched.symptoms} symptoms, {res.no_match.searched.specific_pathways} mechanisms and {res.no_match.searched.patient_organisations} patient groups.</>
                   : "It matched something that leads to no disease in the Atlas."}
               </div>

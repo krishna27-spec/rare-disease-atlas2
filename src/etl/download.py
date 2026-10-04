@@ -18,6 +18,8 @@ SOURCES = {
     "NCBI2Reactome_All_Levels.txt": "https://reactome.org/download/current/NCBI2Reactome_All_Levels.txt",
     "ReactomePathways.txt": "https://reactome.org/download/current/ReactomePathways.txt",
     "ReactomePathwaysRelation.txt": "https://reactome.org/download/current/ReactomePathwaysRelation.txt",
+    "en_product9_prev.xml": "https://www.orphadata.com/data/xml/en_product9_prev.xml",   # epidemiology
+    "en_product9_ages.xml": "https://www.orphadata.com/data/xml/en_product9_ages.xml",   # onset, inheritance
     "gene_specific_summary.txt": "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/gene_specific_summary.txt",
 }
 
