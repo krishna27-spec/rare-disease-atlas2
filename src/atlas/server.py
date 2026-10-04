@@ -104,6 +104,18 @@ def next_steps(disease_id: str, explain: bool = True):
     return call(atlas().next_steps, disease_id, explain)
 
 
+@app.get("/disease/{disease_id}/biology", tags=["Action"])
+def biology(disease_id: str):
+    """Gene (and how it is affected), mechanisms and symptoms, the most informative first."""
+    return call(atlas().biology, disease_id)
+
+
+@app.get("/ten-x", tags=["Action"])
+def ten_x():
+    """The 10x case: a natural history study for MPS IIIC, from scratch versus reusing sister diseases."""
+    return atlas().ten_x()
+
+
 # ---- evidence
 @app.get("/edge/{edge_id}", tags=["Evidence"])
 def edge(edge_id: str):

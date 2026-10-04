@@ -15,6 +15,7 @@ calling edge(edge_id). When nothing is supported, the answer says so and says wh
 """
 import json
 import math
+import re
 
 import pandas as pd
 from rapidfuzz import fuzz, process
@@ -594,6 +595,78 @@ class Atlas:
                                 "edge_ids": o["edge_ids"][:1] + ([n.similar_edge_id] if n.similar_edge_id else [])})
                     break
         return out[:limit]
+
+    # ------------------------------------------------------------------ biology and the 10x case
+    def biology(self, d: str) -> dict:
+        """The disease's biology, most informative first: gene (and how it is affected), mechanisms, symptoms."""
+        self._need_disease(d)
+        e = self.edges
+        genes = []
+        for g in self.genes_of(d):
+            rec = self.G.edge(g["edge_ids"][0])["source_record"]
+            m = re.search(r"\(([^)]*function[^)]*)\)", rec)       # Orphadata: "... mutation(s) (loss of function) in"
+            genes.append({**g, "how_affected": m.group(1) if m else "", "via_parent_disease": "via parent" in rec})
+        mine = self.in_pathway[self.in_pathway.subject.isin([g["gene"] for g in genes])]
+        paths = []
+        for r in mine.itertuples():
+            if r.object in self.pathways.index and not self.pathways.loc[r.object, "generic"]:
+                p = self.pathways.loc[r.object]
+                paths.append({"id": r.object, "name": p["name"], "gene": r.subject,
+                              "source": "Gene Ontology" if r.object.startswith("GO:") else "Reactome",
+                              "n_diseases": p.n_diseases, "n_genes": p.n_genes, "edge_ids": [r.edge_id]})
+        paths.sort(key=lambda x: (x["n_diseases"], x["name"]))
+        ph = e[e.predicate == "has_phenotype"]
+        spread = ph[ph.evidence_type == "curated"].groupby("object").subject.nunique()
+        symptoms = []
+        for hp_id, grp in ph[ph.subject == d].groupby("object"):
+            symptoms.append({"id": hp_id, "name": self.name(hp_id), "n_diseases": int(spread.get(hp_id, 1)),
+                             "stated_in_a_paper": bool((grp.evidence_type == "text_mined").any()),
+                             "in_database": bool((grp.evidence_type == "curated").any()),
+                             "confidence": grp.confidence.max(), "edge_ids": grp.edge_id.tolist()})
+        symptoms.sort(key=lambda x: (x["n_diseases"], -x["stated_in_a_paper"], x["name"]))
+        return clean({"disease": {"id": d, "name": self.name(d)}, "genes": genes, "pathways": paths,
+                      "symptoms": symptoms, "n_symptoms": len(symptoms), "n_diseases_in_atlas": len(self.G.diseases),
+                      "ordering": "mechanisms and symptoms shared by the fewest diseases come first"})
+
+    def ten_x(self) -> dict:
+        """The 10x case: starting a natural history study for MPS IIIC, from scratch versus reusing sister diseases.
+
+        Every number is computed from registered ClinicalTrials.gov studies. No saving is claimed without a source."""
+        tl = pd.read_csv(GRAPH / "nhs_timelines.csv", dtype={"start": str, "completion": str})
+        done = tl[(tl.status == "COMPLETED") & tl.months.notna()]
+        own = tl[tl.disease.str.contains("IIIC")]
+        sister = tl[tl.disease.str.contains("IIIA|IIIB|IIID")]
+        row = lambda r: {"nct": r.nct, "disease": r.disease, "title": r.title, "status": r.status, "start": r.start,
+                         "completion": r.completion, "months": r.months, "enrollment": r.enrollment,
+                         "sponsor": r.sponsor, "source_url": r.source_url, "edge_ids": [r.edge_id]}
+        return clean({
+            "milestone": "Starting a natural history study for MPS IIIC",
+            "why_it_matters": "A natural history study records how a disease progresses without treatment. "
+                              "Regulators ask for it before trials.",
+            "numbers": {"studies": len(tl), "completed": len(done), "median_months": done.months.median(),
+                        "min_months": done.months.min(), "max_months": done.months.max(),
+                        "median_enrollment": done.enrollment.median(), "for_sister_diseases": len(sister),
+                        "already_for_mps_iiic": len(own)},
+            "usual_route": ["FDA draft guidance says prospective natural history studies generally take more time than "
+                            "reusing existing data, and longitudinal ones can be lengthy and costly.",
+                            "No published figure was found for the time to set up such a study (protocol, ethics "
+                            "approval, sites, funding), so none is stated."],
+            "usual_route_source": {"label": "FDA, Rare Diseases: Natural History Studies for Drug Development (2019)",
+                                   "url": "https://www.fda.gov/media/122425/download"},
+            "atlas_route": [f"{len(sister)} natural history studies exist for MPS IIIA, IIIB and IIID: protocols, "
+                            "outcome measures and teams to learn from and ask to collaborate with.",
+                            f"MPS IIIC already has {len(own)} registered. Check these first: joining may beat starting "
+                            "a new one."],
+            "own_studies": [row(r) for r in own.itertuples()],
+            "studies": [row(r) for r in tl.itertuples()],
+            "assumptions": ["A study for MPS IIIC could reuse outcome measures from MPS IIIA/IIIB. Not yet validated: "
+                            "clinicians must confirm the diseases are close enough (shared pathway, different genes).",
+                            "Durations are those of the registered studies; a new study could be shorter or longer.",
+                            "No time or cost saving is stated, because there is no cited figure for one."],
+            "validate_next": ["Whether each existing MPS IIIC study is still enrolling and open to this family.",
+                              "Whether sister-disease protocols and registries can be shared (ask the sponsors).",
+                              "Expert review of how well outcome measures transfer between subtypes."],
+            "retrieved": str(tl.retrieved.iloc[0])})
 
     # ------------------------------------------------------------------ numbers
     def stats(self) -> dict:

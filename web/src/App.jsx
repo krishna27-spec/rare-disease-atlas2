@@ -4,6 +4,8 @@ import EvidenceDrawer from "./components/EvidenceDrawer.jsx";
 import Search from "./components/Search.jsx";
 import Starfield from "./components/Starfield.jsx";
 import { Evidence } from "./hooks.js";
+import Intro from "./components/Intro.jsx";
+import About from "./views/About.jsx";
 import Connectors from "./views/Connectors.jsx";
 import Disease from "./views/Disease.jsx";
 import Landing from "./views/Landing.jsx";
@@ -18,6 +20,9 @@ const read = () => {
 export default function App() {
   const [at, setAt] = useState(read);
   const [ev, setEv] = useState(null);
+  // the intro plays once per visit, and only when arriving at the front door
+  const [intro, setIntro] = useState(() => !window.location.hash && !sessionStorage.getItem("entered"));
+  const enter = useCallback(() => { sessionStorage.setItem("entered", "1"); setIntro(false); }, []);
   useEffect(() => {
     const on = () => { setAt(read()); setEv(null); };
     window.addEventListener("hashchange", on);
@@ -38,19 +43,22 @@ export default function App() {
             <nav className="nav">
               <button className={at.view === "mechanism" ? "on" : ""} onClick={() => go({ view: "mechanism" })}>Mechanisms</button>
               <button className={at.view === "connectors" ? "on" : ""} onClick={() => go({ view: "connectors" })}>Connectors</button>
+              <button className={at.view === "about" ? "on" : ""} onClick={() => go({ view: "about" })}>Evidence</button>
             </nav>
           </div>
         </header>
         <AnimatePresence mode="wait">
-          <motion.main key={at.view + (at.id || "")} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}>
+          <motion.main key={at.view + (at.id || "") + (at.view === "disease" ? at.mode : "")} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}>
             {at.view === "disease" && at.id ? <Disease id={at.id} mode={at.mode} go={go} />
               : at.view === "mechanism" ? <Mechanism go={go} />
               : at.view === "connectors" ? <Connectors go={go} />
+              : at.view === "about" ? <About />
               : <Landing go={go} />}
           </motion.main>
         </AnimatePresence>
       </div>
       <EvidenceDrawer state={ev} close={close} />
+      <AnimatePresence>{intro && <Intro enter={enter} />}</AnimatePresence>
     </Evidence.Provider>
   );
 }

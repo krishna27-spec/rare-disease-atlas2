@@ -14,9 +14,9 @@ export default function Landing({ go }) {
   return (
     <div className="wrap hero">
       <motion.span className="eyebrow" {...up(0)}>AI Atlas for the world's rare diseases</motion.span>
-      <motion.h1 {...up(1)}>Scattered points of light.<br /><span className="grad">One map to connect them.</span></motion.h1>
+      <motion.h1 {...up(1)}>What would you like<br /><span className="grad">to explore?</span></motion.h1>
       <motion.p className="lead" {...up(2)}>
-        Start from one rare disease. See which others share its biology, what research already exists, and who could help. Every connection shows its source.
+        Start from one rare disease. See which others share its biology, what research already exists, and who could help. It starts simple and goes as deep as you ask.
       </motion.p>
       <motion.div {...up(3)} style={{ width: "100%", display: "flex", justifyContent: "center", position: "relative", zIndex: 5 }}>
         <Search autoFocus onDisease={(id) => go({ view: "disease", id, mode: "full" })} />

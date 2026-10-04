@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 const COLOR = { centre: "#8b5cf6", disease: "#a78bfa", gene: "#8ec5ff", pathway: "#c9b8ff", symptom: "#f5b8d8", patient_org: "#86e3c3" };
 const SIZE = { centre: 30, disease: 19, gene: 12, pathway: 11, symptom: 10, patient_org: 11 };
 const KIND = { centre: "Disease", disease: "Similar disease", gene: "Gene", pathway: "Mechanism", symptom: "Symptom (from a paper)", patient_org: "Patient group" };
-const EDGE = { curated: "231,225,255", text_mined: "245,183,85", inferred: "138,133,152" };
+const EDGE = { curated: "95,211,154", text_mined: "103,198,214", inferred: "242,184,75" };   // verified, literature, Atlas-derived
 const SAY = { similar_to: "is similar to", gene_associated_with_disease: "causes", participates_in_pathway: "works in", has_phenotype: "has symptom", serves_disease: "serves" };
 
 const rad = (deg) => (deg * Math.PI) / 180;
@@ -34,8 +34,8 @@ function layout(data) {
   paths.sort((x, y) => x._a - y._a);
   spread(paths.length, 208, 332).forEach((a, i) => (pos[paths[i].id] = { r: i % 2 ? 196 : 150, a }));
   const sym = by("symptom"), org = by("patient_org");
-  spread(sym.length, 104, 158).forEach((a, i) => (pos[sym[i].id] = { r: 236, a }));
-  spread(org.length, 22, 76).forEach((a, i) => (pos[org[i].id] = { r: 236, a }));
+  spread(sym.length, 118, 172).forEach((a, i) => (pos[sym[i].id] = { r: 236, a }));
+  spread(org.length, 8, 66).forEach((a, i) => (pos[org[i].id] = { r: 236, a }));
   data.nodes.filter((n) => !pos[n.id]).forEach((n, i) => (pos[n.id] = { r: 150, a: 60 + i * 24 }));
   return pos;
 }
@@ -58,7 +58,11 @@ function glyph(ctx, type, s) {
   }
 }
 
-export default function ConstellationGraph({ data, onNode, onEdge }) {
+// `show` is the set of layers the reader has asked for so far: "mechanism", "related", "groups", "symptoms".
+// The map starts as the disease and its gene and grows as the reader goes deeper (or presses "Expand connections").
+export default function ConstellationGraph({ data, onNode, onEdge, show, onExpand }) {
+  const vis = useRef(show);
+  vis.current = show;
   const ref = useRef(null);
   const [tip, setTip] = useState(null);
   const cb = useRef({ onNode, onEdge });
@@ -70,19 +74,24 @@ export default function ConstellationGraph({ data, onNode, onEdge }) {
     const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const P = layout(data), byId = Object.fromEntries(data.nodes.map((n) => [n.id, n]));
     const edges = data.edges.filter((e) => P[e.source] && P[e.target]);
-    let w = 0, h = 0, k = 1, raf, t0 = performance.now(), hover = null, zoom = 1, zt = 1, ox = 0, oy = 0, drag = null;
-    const XY = {};
+    let w = 0, h = 0, k = 1, raf, hover = null, zoom = 1, zt = 1, ox = 0, oy = 0, drag = null;
+    const XY = {}, born = {};
+    const own = new Set(data.edges.filter((e) => e.predicate === "gene_associated_with_disease" && e.target === data.centre).map((e) => e.source));
+    const layer = (n) => (n.type === "centre" || own.has(n.id) ? "core" : n.type === "pathway" ? "mechanism" : n.type === "patient_org" ? "groups" : n.type === "symptom" ? "symptoms" : "related");
+    const visible = (n) => layer(n) === "core" || !vis.current || vis.current.has(layer(n));
 
     const size = () => {
       const d = Math.min(window.devicePixelRatio || 1, 2), b = c.getBoundingClientRect();
       w = b.width; h = b.height; c.width = w * d; c.height = h * d; ctx.setTransform(d, 0, 0, d, 0, 0);
-      k = Math.min(w / 980, h / 700);
+      k = Math.max(0.62, Math.min(w / 980, h / 700));
     };
     const place = (t) => {
-      const cx = w / 2 + ox, cy = h * 0.54 + oy;
+      const cx = w / 2 + ox, cy = h * (h < 400 ? 0.62 : 0.54) + oy;
       data.nodes.forEach((n, i) => {
-        const p = P[n.id], delay = n.type === "centre" ? 0 : 250 + p.r * 2.4 + i * 14;
-        const u = still ? 1 : Math.min(1, Math.max(0, (t - t0 - delay) / 900)), e = 1 - Math.pow(1 - u, 4);
+        const p = P[n.id];
+        if (!visible(n)) delete born[n.id];
+        else if (born[n.id] === undefined) born[n.id] = t + (n.type === "centre" ? 0 : 120 + p.r * 1.6 + (i % 7) * 60);   // each layer grows outward
+        const u = born[n.id] === undefined ? 0 : still ? 1 : Math.min(1, Math.max(0, (t - born[n.id]) / 900)), e = 1 - Math.pow(1 - u, 4);
         const drift = still ? 0 : Math.sin(t / 2600 + i * 1.7) * 2.2;
         const r = p.r * k * zoom * e;
         XY[n.id] = { x: cx + Math.cos(rad(p.a)) * r + drift * 0.6, y: cy + Math.sin(rad(p.a)) * r + drift, o: e, a: p.a, r: p.r };
@@ -111,6 +120,7 @@ export default function ConstellationGraph({ data, onNode, onEdge }) {
       // edges
       for (const e of edges) {
         const a = XY[e.source], b = XY[e.target], q = ctrl(a, b, cx, cy);
+        if (a.o < 0.02 || b.o < 0.02) continue;
         const lit = focusEdge === e.id || (focusNode && (e.source === focusNode || e.target === focusNode));
         const dim = (focusNode || focusEdge) && !lit;
         const quiet = e.predicate === "serves_disease" && e.target !== data.centre;   // groups of other diseases stay in the background
@@ -132,6 +142,7 @@ export default function ConstellationGraph({ data, onNode, onEdge }) {
       // nodes
       for (const n of data.nodes) {
         const p = XY[n.id], col = COLOR[n.type] || "#a78bfa", is = focusNode === n.id;
+        if (p.o < 0.02) continue;
         const dim = (near && !near.has(n.id) && !is) || (focusEdge && !edges.some((e) => e.id === focusEdge && (e.source === n.id || e.target === n.id)));
         const s = SIZE[n.type] * Math.max(0.72, k) * Math.sqrt(zoom) * (is ? 1.14 : 1);
         ctx.globalAlpha = p.o * (dim ? 0.2 : 1);
@@ -144,7 +155,7 @@ export default function ConstellationGraph({ data, onNode, onEdge }) {
         ctx.save(); ctx.translate(p.x, p.y); glyph(ctx, n.type, s); ctx.restore();
         // label, pushed outward from the centre so it never sits on a line
         const big = n.type === "centre" || n.type === "disease";
-        if (big || is || (near && near.has(n.id)) || k * zoom > 0.9) {
+        if (big || is || own.has(n.id) || (near && near.has(n.id)) || k * zoom > 0.9) {
           ctx.font = `${big ? 600 : 500} ${n.type === "centre" ? 16 : big ? 14 : 12}px "Inter Variable", Inter, sans-serif`;
           ctx.fillStyle = big || is ? "#f5f3fa" : "rgba(184,179,199,0.92)";
           const full = n.type === "gene" ? n.id : n.label, max = n.type === "pathway" ? 24 : 30;
@@ -165,12 +176,13 @@ export default function ConstellationGraph({ data, onNode, onEdge }) {
     const pick = (ev) => {
       const b = c.getBoundingClientRect(), x = ev.clientX - b.left, y = ev.clientY - b.top;
       for (const n of [...data.nodes].reverse()) {
-        const p = XY[n.id]; if (p && Math.hypot(p.x - x, p.y - y) < SIZE[n.type] * Math.max(0.72, k) + 7) return { node: n.id, x: p.x, y: p.y };
+        const p = XY[n.id]; if (p && p.o > 0.5 && Math.hypot(p.x - x, p.y - y) < SIZE[n.type] * Math.max(0.72, k) + 7) return { node: n.id, x: p.x, y: p.y };
       }
-      const cx = w / 2 + ox, cy = h * 0.54 + oy;
+      const cx = w / 2 + ox, cy = h * (h < 400 ? 0.62 : 0.54) + oy;
       let best = null;
       for (const e of edges) {
         const a = XY[e.source], bb = XY[e.target], q = ctrl(a, bb, cx, cy);
+        if (a.o < 0.5 || bb.o < 0.5) continue;
         for (let u = 0.12; u < 0.9; u += 0.06) {
           const p = at(a, q, bb, u), d = Math.hypot(p.x - x, p.y - y);
           if (d < 9 && (!best || d < best.d)) best = { edge: e.id, x: p.x, y: p.y, d };
@@ -209,15 +221,17 @@ export default function ConstellationGraph({ data, onNode, onEdge }) {
   }, [data]);
 
   return (
-    <div className="graphshell">
+    <div className={"graphshell" + (show && show.size === 0 ? " compact" : "")}>
       <canvas ref={ref} role="img" aria-label="Knowledge graph around the selected disease" />
       {tip && <div className="tip" style={{ left: tip.x, top: tip.y }}><span>{tip.kind}</span><br /><b>{tip.text}</b></div>}
       <div className="legend">
-        <span><i />From a database</span>
-        <span><i className="mined" />Read from a paper or website</span>
-        <span><i className="inferred" />Computed similarity</span>
+        <span><i />Verified source</span>
+        <span><i className="mined" />Research literature</span>
+        <span><i className="inferred" />Atlas-derived</span>
       </div>
-      <div className="hint">Click any point or line for the evidence</div>
+      {onExpand
+        ? <button className="expand" onClick={onExpand}>Expand connections</button>
+        : <div className="hint">Click any point or line to see why it is there</div>}
     </div>
   );
 }
