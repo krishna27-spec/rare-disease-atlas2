@@ -628,44 +628,68 @@ class Atlas:
                       "symptoms": symptoms, "n_symptoms": len(symptoms), "n_diseases_in_atlas": len(self.G.diseases),
                       "ordering": "mechanisms and symptoms shared by the fewest diseases come first"})
 
-    def ten_x(self) -> dict:
-        """The 10x case: starting a natural history study for MPS IIIC, from scratch versus reusing sister diseases.
+    def ten_x(self, d: str = "MONDO:0009657") -> dict:
+        """The 10x case for one disease: a natural history study from scratch versus reusing what relatives built.
 
         Every number is computed from registered ClinicalTrials.gov studies. No saving is claimed without a source."""
+        self._need_disease(d)
         tl = pd.read_csv(GRAPH / "nhs_timelines.csv", dtype={"start": str, "completion": str})
-        done = tl[(tl.status == "COMPLETED") & tl.months.notna()]
-        own = tl[tl.disease.str.contains("IIIC")]
-        sister = tl[tl.disease.str.contains("IIIA|IIIB|IIID")]
+        name = self.name(d)
+        nb = self.G.neighbours_of(d)
+        rel = list(nb[nb.score >= NEIGHBOUR_MIN].neighbour_id)
+        own = tl[tl.disease_id == d]
+        sister = tl[tl.disease_id.isin(rel)].drop_duplicates("nct")
+        sister = sister[~sister.nct.isin(own.nct)]
+        family = pd.concat([own, sister]).drop_duplicates("nct")
+        scope, basis = family, f"{name} and its close relatives"
+        if not len(family[(family.status == "COMPLETED") & family.months.notna()]):
+            scope, basis = tl.drop_duplicates("nct"), "all diseases in the Atlas"     # nothing completed nearby: say so
+        done = scope[(scope.status == "COMPLETED") & scope.months.notna()]
         row = lambda r: {"nct": r.nct, "disease": r.disease, "title": r.title, "status": r.status, "start": r.start,
                          "completion": r.completion, "months": r.months, "enrollment": r.enrollment,
                          "sponsor": r.sponsor, "source_url": r.source_url, "edge_ids": [r.edge_id]}
+        sister_names = sorted({self.name(x) for x in sister.disease_id})
+        if len(own):
+            route = [f"{name} already has {len(own)} natural history stud{'y' if len(own) == 1 else 'ies'} registered. "
+                     "Check these first: joining may beat starting a new one."]
+        else:
+            route = [f"No natural history study is registered for {name}. That is the gap to close."]
+        if len(sister):
+            route.append(f"{len(sister)} more exist for {', '.join(sister_names[:4])}"
+                         f"{' and others' if len(sister_names) > 4 else ''}: protocols, outcome measures and teams to "
+                         "learn from and ask to collaborate with.")
+        elif not rel:
+            route.append("No disease in the Atlas is similar enough to borrow from, so there is no supported shortcut yet.")
+        else:
+            route.append("Its close relatives have no registered natural history study either, so there is nothing "
+                         "to reuse yet. A shared study across these diseases would be new ground.")
         return clean({
-            "milestone": "Starting a natural history study for MPS IIIC",
+            "disease": {"id": d, "name": name},
+            "milestone": f"Starting a natural history study for {name}",
             "why_it_matters": "A natural history study records how a disease progresses without treatment. "
                               "Regulators ask for it before trials.",
-            "numbers": {"studies": len(tl), "completed": len(done), "median_months": done.months.median(),
-                        "min_months": done.months.min(), "max_months": done.months.max(),
-                        "median_enrollment": done.enrollment.median(), "for_sister_diseases": len(sister),
-                        "already_for_mps_iiic": len(own)},
+            "numbers": {"own": len(own), "relatives": len(sister), "completed": len(done), "basis": basis,
+                        "median_months": done.months.median() if len(done) else None,
+                        "min_months": done.months.min() if len(done) else None,
+                        "max_months": done.months.max() if len(done) else None,
+                        "median_enrollment": done.enrollment.median() if len(done) else None},
             "usual_route": ["FDA draft guidance says prospective natural history studies generally take more time than "
                             "reusing existing data, and longitudinal ones can be lengthy and costly.",
                             "No published figure was found for the time to set up such a study (protocol, ethics "
                             "approval, sites, funding), so none is stated."],
             "usual_route_source": {"label": "FDA, Rare Diseases: Natural History Studies for Drug Development (2019)",
                                    "url": "https://www.fda.gov/media/122425/download"},
-            "atlas_route": [f"{len(sister)} natural history studies exist for MPS IIIA, IIIB and IIID: protocols, "
-                            "outcome measures and teams to learn from and ask to collaborate with.",
-                            f"MPS IIIC already has {len(own)} registered. Check these first: joining may beat starting "
-                            "a new one."],
+            "atlas_route": route,
+            "supported": bool(len(own) or len(sister)),
             "own_studies": [row(r) for r in own.itertuples()],
-            "studies": [row(r) for r in tl.itertuples()],
-            "assumptions": ["A study for MPS IIIC could reuse outcome measures from MPS IIIA/IIIB. Not yet validated: "
-                            "clinicians must confirm the diseases are close enough (shared pathway, different genes).",
+            "relative_studies": [row(r) for r in sister.sort_values("status").itertuples()],
+            "assumptions": [f"A study for {name} could reuse outcome measures from its relatives. Not yet validated: "
+                            "clinicians must confirm the diseases are close enough (shared mechanism, different genes).",
                             "Durations are those of the registered studies; a new study could be shorter or longer.",
                             "No time or cost saving is stated, because there is no cited figure for one."],
-            "validate_next": ["Whether each existing MPS IIIC study is still enrolling and open to this family.",
-                              "Whether sister-disease protocols and registries can be shared (ask the sponsors).",
-                              "Expert review of how well outcome measures transfer between subtypes."],
+            "validate_next": [f"Whether each existing study is still enrolling and open to families with {name}.",
+                              "Whether relatives' protocols and registries can be shared (ask the sponsors).",
+                              "Expert review of how well outcome measures transfer between these diseases."],
             "retrieved": str(tl.retrieved.iloc[0])})
 
     # ------------------------------------------------------------------ numbers

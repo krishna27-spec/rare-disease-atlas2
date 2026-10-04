@@ -3,8 +3,8 @@ import Search from "../components/Search.jsx";
 import { MPS3C } from "../api.js";
 
 const DOORS = [
-  { who: "Patient group leader", say: "I lead a patient group", get: "Who is like us, what already exists, what to do next.", to: { view: "disease", id: MPS3C, mode: "full" } },
-  { who: "Family or caregiver", say: "We just got a diagnosis", get: "Your community first, in plain language.", to: { view: "disease", id: MPS3C, mode: "simple" } },
+  { who: "Patient group leader", say: "I lead a patient group", get: "Who is like us, what already exists, what to do next.", to: { view: "disease", id: MPS3C, mode: "overview" } },
+  { who: "Family or caregiver", say: "We just got a diagnosis", get: "Your community first: the groups already working on it.", to: { view: "disease", id: MPS3C, mode: "communities" } },
   { who: "Biotech or pharma scout", say: "I'm scouting a therapy", get: "Every disease cluster a mechanism could reach.", to: { view: "mechanism" } },
   { who: "Researcher or clinician", say: "I study one gene", get: "Who else works on your mechanism, across diseases.", to: { view: "connectors" } },
 ];
@@ -19,10 +19,10 @@ export default function Landing({ go }) {
         Start from one rare disease. See which others share its biology, what research already exists, and who could help. It starts simple and goes as deep as you ask.
       </motion.p>
       <motion.div {...up(3)} style={{ width: "100%", display: "flex", justifyContent: "center", position: "relative", zIndex: 5 }}>
-        <Search autoFocus onDisease={(id) => go({ view: "disease", id, mode: "full" })} />
+        <Search autoFocus onDisease={(id) => go({ view: "disease", id, mode: "overview" })} />
       </motion.div>
       <motion.p className="small muted" {...up(4)}>
-        Try <a onClick={() => go({ view: "disease", id: MPS3C, mode: "full" })} style={{ cursor: "pointer" }}>Sanfilippo C</a>, a gene like HEXB, or a symptom like seizure
+        Try <a onClick={() => go({ view: "disease", id: MPS3C, mode: "overview" })} style={{ cursor: "pointer" }}>Sanfilippo C</a>, a gene like HEXB, or a symptom like seizure
       </motion.p>
       <motion.div className="doors" {...up(5)}>
         {DOORS.map((d) => (

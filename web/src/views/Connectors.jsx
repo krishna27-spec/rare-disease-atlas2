@@ -29,7 +29,7 @@ export default function Connectors({ go }) {
             <Card key={p.person_id} meta={`${p.n_diseases_in_scope} diseases · via ${p.via.join(", ")}${p.cross_cluster ? " · across clusters" : ""}`} title={p.name}
               foot={<Why ids={p.edge_ids} title={p.name} label="See the records" />}>
               <p>{p.affiliation || "Affiliation not recorded"}</p>
-              <div className="chips">{p.links.slice(0, 5).map((l) => <button key={l.id} className="chip" onClick={() => go({ view: "disease", id: l.id, mode: "full" })}>{l.name}</button>)}{p.links.length > 5 && <span className="chip">+{p.links.length - 5}</span>}</div>
+              <div className="chips">{p.links.slice(0, 5).map((l) => <button key={l.id} className="chip" onClick={() => go({ view: "disease", id: l.id, mode: "overview" })}>{l.name}</button>)}{p.links.length > 5 && <span className="chip">+{p.links.length - 5}</span>}</div>
             </Card>
           )} />
           {res.organisations.length > 0 && (

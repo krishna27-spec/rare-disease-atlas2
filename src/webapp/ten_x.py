@@ -16,6 +16,7 @@ def render(G, disease: str) -> None:
     st.caption("Milestone: a family group wants a natural history study (a study that records how the disease "
                "progresses without treatment), the evidence regulators ask for before trials.")
     tl = pd.read_csv(GRAPH / "nhs_timelines.csv")
+    tl = tl[tl.disease.str.contains("MPS III")].drop_duplicates("nct")   # this tab tells the Sanfilippo story
     done = tl[(tl.status == "COMPLETED") & tl.months.notna()]
     c1, c2 = st.columns(2)
     with c1:
