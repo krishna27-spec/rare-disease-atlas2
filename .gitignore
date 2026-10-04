@@ -20,3 +20,5 @@ __pycache__/
 
 # Node (web/dist IS committed, so the site runs without Node)
 node_modules/
+web/static-api/
+web/dist-pages/

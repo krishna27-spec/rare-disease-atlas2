@@ -4,6 +4,8 @@
 
 Built for the Hack-Nation challenge "AI Atlas for the World's Rare Diseases" (OpenAI × Buffalo Initiative). It covers 22 rare neurological diseases (Sanfilippo/MPS III, Batten/NCL, Niemann-Pick C, Tay-Sachs and others) as an evidence-tracked knowledge graph with a website on top.
 
+**Live site: https://krishna27-spec.github.io/rare-disease-atlas2/** (nothing to install)
+
 > Research exploration tool. Not medical advice.
 
 ![The map around MPS IIIC](docs/screenshots/4-map.png)
@@ -30,16 +32,17 @@ Then open **http://localhost:8000**.
 
 **Optional:** to get the three "next steps" written in plain language by gpt-oss, copy `.env.example` to `.env` and put a Groq API key in `LLM_API_KEY`. Without it the same steps are shown in the Atlas's own wording, with the same evidence.
 
-### Put it on a public address
+### The public site
 
-The repository has a `Dockerfile` and a `render.yaml`, so it deploys as one small web service.
+https://krishna27-spec.github.io/rare-disease-atlas2/ is the same website with no server behind it. Every API answer is exported to a static file and search runs in the browser, so it is hosted free on GitHub Pages and never sleeps. To republish after a change:
 
-1. Sign in at [render.com](https://render.com) with GitHub.
-2. **New → Blueprint**, pick this repository, **Apply**.
-3. When asked for `LLM_API_KEY`, paste a Groq key, or leave it empty (the site works without it).
-4. After the build, Render shows the public address (`https://atlas-ai-….onrender.com`).
+```bash
+bash scripts/publish_pages.sh
+```
 
-On the free plan the service sleeps when idle, so the first visit after a pause takes up to a minute. The same `Dockerfile` works on Fly.io, Railway or a Hugging Face Docker Space.
+Two differences from running it locally: the plain-language next steps are the ones gpt-oss wrote at publish time (10 of 22 diseases; the rest show the Atlas's own wording), and a mechanism search uses the single best-matching pathway or gene.
+
+If you want the live API on a public address as well, the repository has a `Dockerfile` and a `render.yaml`: on [render.com](https://render.com), choose **New → Blueprint** and pick this repository.
 
 ---
 
@@ -49,7 +52,7 @@ Follow Maria, who leads a patient group for **MPS IIIC (Sanfilippo C)**, a disea
 
 | Step | Do this | What you should see |
 |---|---|---|
-| 1 | Open the site and click **Enter the Atlas** | A DNA helix, one variant, and its signal growing into a network |
+| 1 | Open the [live site](https://krishna27-spec.github.io/rare-disease-atlas2/) (or your local copy) and click **Enter the Atlas** | A DNA helix, one variant, and its signal growing into a network |
 | 2 | Type `sanfilipo c` (typo on purpose) and press Enter | The search still finds MPS IIIC |
 | 3 | Read the **Overview** tab | One paragraph, three key facts and five numbers. The tabs above go deeper |
 | 4 | Open **Connections** | The map draws itself in stages. Click **Expand connections** to add patient groups and symptoms |
@@ -185,7 +188,7 @@ Changing the website needs Node 20+: `cd web && npm install && npm run build`.
 - **The Connectors ranking counts breadth only.** It does not yet weigh whether a study ran or how recent it is, so the top entry can be someone listed on withdrawn studies.
 - **Similarity uses Reactome pathways and HPO symptoms.** Four Batten genes have no Reactome pathway, so that cluster rests on symptoms; Gene Ontology fills the gap for navigation but not for scoring.
 - **Landscape figures are registry counts, not estimates.** "Ran to completion" is not "the treatment worked". Funding is NIH only (the most recent year of each grant), so it leaves out other countries, charities and industry. Prevalence is shown only where Orphadata reports a figure; a dark country means no reported figure. No cost-to-treatment or success probability is given, because there is no cited source for one.
-- **Desktop only.** There is no mobile layout, and the site is not deployed to a public URL.
+- **Desktop only.** There is no mobile layout.
 
 ---
 
