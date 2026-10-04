@@ -18,6 +18,7 @@ uv run python -m src.extract --limit 20 --spread   # LLM extraction over abstrac
 uv run python -m src.graph.review             # second-model verdicts on text-mined edges (LLM, cached per edge; --cache-only skips the graph write)
 uv run python -m src.graph.check              # evidence-rule checks; the closest thing to a test suite
 uv run uvicorn src.atlas.server:app --port 8000    # JSON API for the UI; docs at /docs
+bash scripts/publish_pages.sh                 # export static API files, build the server-less site, push to gh-pages
 uv run python -m src.hello_llm                # check that the LLM settings in .env work
 ```
 
@@ -105,3 +106,7 @@ Evidence-type colours (`COLOURS` in `webapp/data.py`: blue curated, orange text-
 ### Query layer (`src/atlas/queries.py`)
 
 `Atlas` exposes the brief's four capabilities as methods returning JSON-ready dicts: `search` (search engine), `clusters` / `cluster` / `neighbours` / `clusters_for_mechanism` (clustering), `pathway_paths` (pathway navigator), `connectors` (connector), plus `disease`, `assets`, `next_steps`, `edge`, `subgraph`, `contradictions`, `stats`. Every returned item carries `edge_ids`; `graph.check` asserts they all exist. When nothing is supported the result carries `no_match` / `no_route` / `no_connector` with what was searched. Pass results through `clean()` so numpy values and NaN are JSON-safe. New precomputed inputs belong in `connections.py` (as `pathways.parquet` and `connectors.parquet` are), because the deployed query layer has no `data/raw`.
+
+### Two ways the site is served
+
+`npm run build` makes `web/dist`, which FastAPI serves and which calls the live API. `npm run build:pages` makes `web/dist-pages` for GitHub Pages: `src/atlas/export_static.py` writes every API answer to `web/static-api/`, and `web/src/api.js` (when `__STATIC__` is set) maps each API path to one of those files and runs search and the mechanism lookup in the browser. A new endpoint therefore needs three things: the query method, the route in `server.py`, and a line in `export_static.py` plus its path mapping in `api.js`. IDs lose their colon in file names (`MONDO_0009657`).

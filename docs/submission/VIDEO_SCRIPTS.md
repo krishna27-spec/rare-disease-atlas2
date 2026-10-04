@@ -4,8 +4,8 @@ You can read these word for word. The left column is what to do on screen, the r
 
 ## Before you record (once)
 
-1. In a terminal, in the project folder: `uv run uvicorn src.atlas.server:app --port 8000`
-2. Open **http://localhost:8000** in a **new browser window** (so the intro plays). Make the window large.
+1. Open **https://krishna27-spec.github.io/rare-disease-atlas2/** in a **new browser window** (so the intro plays). Make the window large. Nothing needs to be installed or running.
+2. Do one silent run-through of the clicks.
 3. Start your screen recorder (OBS, Loom or Zoom) with the microphone on.
 4. Read slowly. If you finish early, that is fine. If you run over, drop the line marked *(optional)*.
 
