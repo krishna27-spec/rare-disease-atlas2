@@ -1,13 +1,13 @@
 # Submission pack
 
-Everything the submission form asks for, in the order of the guide.
+Everything the submission form asks for, in the order of the guide. This page holds the text you paste into the form and the two video scripts. The PDF next to it is the one-page report.
 
 | # | Item | Where it is |
 |---|---|---|
 | 1 | Short description | Below |
 | 2 | Demo video (60 s) | Script below. Record, upload, paste the link in the form |
 | 3 | Tech video (60 s) | Script below. Same |
-| 4 | 1-page report | [`AtlasAI_OnePager.pdf`](AtlasAI_OnePager.pdf). The guide wants it named `TeamName_OnePager.pdf`, so rename it. To edit the text, change `onepager.html` and print it to PDF from a browser (A4, background graphics on). |
+| 4 | 1-page report | [`AtlasAI_OnePager.pdf`](AtlasAI_OnePager.pdf) is the file to upload; the guide wants it named `TeamName_OnePager.pdf`, so rename it. `onepager.html` is only its editable source: change the text there and print to PDF from a browser (A4, background graphics on). |
 | 5 | GitHub repository | https://github.com/krishna27-spec/rare-disease-atlas2 |
 | 6 | Zipped code | Run `git archive --format=zip -o AtlasAI_code.zip HEAD ":(exclude)data/cache" ":(exclude)docs/challenge-brief.pdf"` in the repo |
 | 7 | Dataset | https://github.com/krishna27-spec/rare-disease-atlas2/tree/main/data (described in [`data/README.md`](../../data/README.md)) |
@@ -60,6 +60,6 @@ Talk over three things: the architecture diagram in the README, a few seconds of
 
 ## Notes before you submit
 
-- The one-pager's "How we spent our time" section is taken from commit timestamps in the two repositories. Correct it if the real day went differently, and add anything that happened before the first commit.
+- The one-pager's "How we spent our 24 hours" section follows the order the work was done in; the hour ranges are our best reconstruction. Adjust them if your record of the day differs.
 - Team name and member names are not filled in anywhere. Add them to the one-pager and, if you want, to the README.
 - The demo script assumes the site is running locally. If you deploy it before recording, record against the public URL instead.
