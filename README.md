@@ -189,6 +189,8 @@ Changing the website needs Node 20+: `cd web && npm install && npm run build`.
 | `data/manual/` | Hand-maintained inputs: the disease list and patient organisations |
 | `docs/BACKEND_GUIDE.md` | How the backend works, in plain language |
 | `docs/BACKEND_API.md` | Every endpoint and what it returns |
+| `docs/submission/` | The submission pack: short description, both video scripts, the one-page report |
+| `data/README.md` | What each dataset file contains |
 | `docs/challenge-brief.pdf` | The challenge brief |
 | `CLAUDE.md` | Notes for working on the code |
 
