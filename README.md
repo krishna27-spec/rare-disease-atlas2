@@ -50,10 +50,16 @@ uv run uvicorn src.atlas.server:app --port 8000     # site at http://localhost:8
 
 For front-end work, run the API as above and `npm run dev` in `web/` (requests are proxied to port 8000).
 
-- **Landing:** one search box and four doors, one for each person in the brief.
-- **Disease page:** the graph as a constellation (the disease in the centre, its gene, shared mechanisms, similar diseases, patient groups), then five chapters: Understand, Who is like us, What exists, Who can help, What to do next. A "simple view" shows a family the community and next steps first.
-- **Mechanisms:** rank disease clusters for a pathway, process or gene. **Connectors:** people and organisations that link diseases.
-- Any "Why?" chip, card or graph line opens one evidence drawer with the source, date, confidence, quote and reviewer verdict.
+The site starts minimal and grows as the visitor asks for more:
+
+- **Intro:** a DNA helix, one highlighted variant, and its signal growing into a network. It waits for the visitor to enter. (Animation from the Streamlit redesign of the original app, ported here.)
+- **Home:** one search box and four doors, one for each person in the brief.
+- **Disease page:** the disease and its gene, then the brief's questions, each with a one-line answer: *Who shares our disease characteristics? What useful work already exists? Who could we work with? What should we do together next?* Opening a question reveals its detail and grows the matching layer of the map (mechanisms, similar diseases, patient groups, symptoms). "Go deeper" adds the biology and the 10× route. A family view shows the community and next steps first.
+- **The map:** a constellation drawn on canvas with the disease in the centre. Line style shows the kind of evidence: verified source, research literature, Atlas-derived.
+- **Mechanisms**, **Connectors** and **Evidence** pages for the therapy scout, the researcher, and anyone who wants to see how facts are checked.
+- Any "Why?" chip, card or map line opens one evidence drawer: plain label and strength first, the technical record behind "Evidence details".
+
+## Evidence model
 
 
 
