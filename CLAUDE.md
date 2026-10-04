@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Rare Disease Atlas: a hackathon project (Hack-Nation challenge 05, brief in `buffulo.pdf`) that builds an evidence-tracked knowledge graph for 22 neurological lysosomal storage diseases and uses it to suggest cited next steps to a patient-group leader ("Maria", whose child has Sanfilippo / MPS IIIC). The disease list is hand-picked in `data/manual/diseases.csv`.
+Rare Disease Atlas: a hackathon project (Hack-Nation challenge 05, brief in `docs/challenge-brief.pdf`) that builds an evidence-tracked knowledge graph for 22 neurological lysosomal storage diseases and uses it to suggest cited next steps to a patient-group leader ("Maria", whose child has Sanfilippo / MPS IIIC). The disease list is hand-picked in `data/manual/diseases.csv`.
 
 ## Commands
 

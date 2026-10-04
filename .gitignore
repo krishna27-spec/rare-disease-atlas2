@@ -1,13 +1,22 @@
 # Secrets: never commit
 .env
 
-# Big downloads and caches (can be rebuilt)
+# Big downloads (re-downloaded by the build) and raw API caches
 data/raw/
-data/cache/
+data/cache/*
+# ...but keep the small files a rebuild cannot recreate without LLM quota: the abstracts that were read,
+# what gpt-oss extracted from them, and the second model's verdicts
+!data/cache/abstracts.jsonl
+!data/cache/abstracts_filtered.jsonl
+!data/cache/papers.jsonl
+!data/cache/extractions.jsonl
+!data/cache/edges_text_mined.jsonl
+!data/cache/reviews.jsonl
 
 # Python
 .venv/
 __pycache__/
 *.pyc
+
+# Node (web/dist IS committed, so the site runs without Node)
 node_modules/
-web/dist/

@@ -1,117 +1,193 @@
 # Rare Disease Atlas
 
-An evidence-backed knowledge graph for 22 neuronopathic lysosomal storage diseases (Sanfilippo/MPS III, the NCLs, Niemann-Pick C, GM1/GM2, MLD, Krabbe, alpha-mannosidosis, mucolipidosis IV, plus MPS I/II for contrast), with a JSON API that a UI builds on. Built for the Hack-Nation "AI Atlas for the World's Rare Diseases" challenge.
+**Start from one rare disease. See which others share its biology, what research already exists, who could help, and what to do next. Every connection shows its source.**
 
-> **Research exploration tool. Not medical advice.** Always confirm with clinicians and researchers.
+Built for the Hack-Nation challenge "AI Atlas for the World's Rare Diseases" (OpenAI × Buffalo Initiative). It covers 22 rare neurological diseases (Sanfilippo/MPS III, Batten/NCL, Niemann-Pick C, Tay-Sachs and others) as an evidence-tracked knowledge graph with a website on top.
 
-## What it answers: the "Maria" journey
+> Research exploration tool. Not medical advice.
 
-Maria leads a patient group for **MPS IIIC (gene HGSNAT)**.
+![The map around MPS IIIC](docs/screenshots/4-map.png)
 
-1. **Who shares our disease characteristics?** Search "Sanfilippo C"; the Atlas ranks the most similar diseases with *why* (shared heparan sulfate pathway, shared informative symptoms) and *what differs*.
-2. **What useful work already exists?** Natural history studies, registries and trials, patient organisations, and the people who work across several of these diseases.
-3. **What should we do together next?** 1 to 3 plain-language steps. Code finds candidate actions in the graph; gpt-oss may only reword them and must cite edge IDs, and code discards any sentence that cites nothing real.
+---
 
-When nothing is supported, the answer says so, lists what was searched and what evidence would change it.
+## Run it in two minutes
 
-## Architecture
-
-```
-sources   MONDO, HPO, Orphadata, HGNC, Reactome, Gene Ontology, ClinVar, PubMed, ClinicalTrials.gov,
-          NIH RePORTER, patient organisations' own websites
-   -> src/etl/      download once into data/raw, cache every API answer in data/cache
-   -> src/graph/    nodes + edges, similarity + Louvain clusters, connection tables, review, checks
-   -> data/graph/   nodes.parquet, edges.parquet, derived tables, STATS.md
-   -> src/atlas/    query layer (queries.py) and JSON API (server.py); reads data/graph only
-   -> web/          the website (React), served by the same process once built
-                    (docs/BACKEND_GUIDE.md explains the API; docs/BACKEND_API.md lists the endpoints)
-```
-
-The four capabilities of the brief map to the API: **search engine** (`/search`), **clustering** (`/clusters`, `/disease/{id}/neighbours`, `/mechanism`), **pathway navigator** (`/disease/{id}/pathways`), **connector** (`/connectors`).
-
-**Where OpenAI models are used** (open-weight gpt-oss through an OpenAI-compatible API; `src/llm.py` falls over between models and providers when one is rate-limited):
-
-| Step | Model | What code checks afterwards |
-|---|---|---|
-| Extract facts from abstracts (`src/extract.py`) | gpt-oss-20b, gpt-oss-120b | The quoted sentence must be in the abstract word for word; names must resolve to IDs already in the graph |
-| Review each text-mined edge (`src/graph/review.py`) | gpt-oss-120b | Verdict stored on the edge; only "supported" raises confidence |
-| Plain-language next steps (`src/webapp/explain.py`) | gpt-oss-120b | Every line must cite edge IDs that were in its input |
-
-The graph is built offline. The API never calls an LLM to build it, and the next-steps endpoint falls back to the cited candidate list if the LLM is unavailable.
-
-## The website
-
-`web/` is a React site (Vite, Framer Motion, a custom canvas graph) on top of the API. Build it once and the API process serves it:
+You need **[uv](https://docs.astral.sh/uv/getting-started/installation/)** (it installs the right Python for you). Nothing else: no API keys, no Node, no database. The graph and the website are already built and included.
 
 ```bash
-cd web && npm install && npm run build && cd ..
-uv run uvicorn src.atlas.server:app --port 8000     # site at http://localhost:8000, API docs at /docs
+git clone https://github.com/krishna27-spec/rare-disease-atlas2
+cd rare-disease-atlas2
+uv sync
+uv run uvicorn src.atlas.server:app --port 8000
 ```
 
-For front-end work, run the API as above and `npm run dev` in `web/` (requests are proxied to port 8000).
+Then open **http://localhost:8000**.
 
-The site starts minimal and grows as the visitor asks for more:
-
-- **Intro:** a DNA helix, one highlighted variant, and its signal growing into a network. It waits for the visitor to enter. (Animation from the Streamlit redesign of the original app, ported here.)
-- **Home:** one search box and four doors, one for each person in the brief.
-- **Disease page:** a header and seven tabs, one view at a time: **Overview** (one paragraph, five numbers, and a tile per tab with a one-line summary), **Biology**, **Connections** (the map), **Research** (reusable studies, cited next steps, researchers), **Communities**, **10× route** (computed for every disease from its own and its relatives' registered natural history studies) and **Evidence**.
-- **The map:** a constellation drawn on canvas with the disease in the centre. It reveals itself in stages (mechanisms, then relatives) and adds patient groups and symptoms on "Expand connections". Line style shows the kind of evidence: verified source, research literature, Atlas-derived.
-- **Mechanisms**, **Connectors** and **Evidence** pages for the therapy scout, the researcher, and anyone who wants to see how facts are checked.
-- Any "Why?" chip, card or map line opens one evidence drawer: plain label and strength first, the technical record behind "Evidence details".
-
-## Evidence model
-
-
-
-Every edge carries `source`, `source_record`, `source_url`, `retrieved` date, `confidence` and one of three evidence types:
-
-| type | meaning |
+| Address | What it is |
 |---|---|
-| `curated` | taken from a database file or API |
-| `text_mined` | read from text, with the exact sentence stored: gpt-oss reading a PubMed abstract (plus a second model's verdict), or code matching disease names on a patient organisation's own web pages |
-| `inferred` | computed by the Atlas (similarity); `method` says how |
+| http://localhost:8000 | The website |
+| http://localhost:8000/docs | The API, with a "Try it out" button on every endpoint |
 
-**Confidence rules:** Orphadata "disease-causing germline mutation" 0.95 (0.85 via a parent disease); HPO annotation 0.9 (0.7 if occasional); Reactome 0.9; Gene Ontology 0.9 experimental, 0.8 curator-reviewed, 0.7 author statement (electronic annotations excluded); trials 0.85 (0.5 if only the disease family is named); patient organisation 0.9 hand-checked (0.5 if scope not verified), 0.85 when the disease is in its name, 0.7 when its site names the disease repeatedly; text-mined 0.7 "stated", 0.5 "suggested", +0.15 if the reviewer says supported (cap 0.95); inferred = the similarity score.
+**Optional:** to get the three "next steps" written in plain language by gpt-oss, copy `.env.example` to `.env` and put a Groq API key in `LLM_API_KEY`. Without it the same steps are shown in the Atlas's own wording, with the same evidence.
 
-**Denials and contradictions:** a fact a paper denies becomes an edge with a `not_` predicate and is paired with any edge that asserts the same thing. None of the denials found so far resolved to one of our diseases, so the Atlas reports 0 contradictions and says why.
+---
 
-**Stable IDs:** MONDO, HGNC symbol, HP, Reactome, `PMID:`, `NCT`, NIH project numbers.
+## A three-minute tour
 
-`uv run python -m src.graph.check` enforces these rules and fails the build if one is broken.
+Follow Maria, who leads a patient group for **MPS IIIC (Sanfilippo C)**, a disease with no approved treatment.
 
-## Numbers
+| Step | Do this | What you should see |
+|---|---|---|
+| 1 | Open the site and click **Enter the Atlas** | A DNA helix, one variant, and its signal growing into a network |
+| 2 | Type `sanfilipo c` (typo on purpose) and press Enter | The search still finds MPS IIIC |
+| 3 | Read the **Overview** tab | One paragraph, five numbers, and a tile for each deeper view |
+| 4 | Open **Connections** | The map draws itself in stages. Click **Expand connections** to add patient groups and symptoms |
+| 5 | Click any line on the map, or any **Why?** button | A drawer with the source, date, strength and the quoted sentence |
+| 6 | Open **Research** | Existing natural history studies first, then three cited next steps |
+| 7 | Open **10× route** | A natural history study from scratch versus reusing what related diseases built, with real durations |
+| 8 | Search `cystic fibrosis` | An honest "nothing matches", with what was searched |
 
-See [`data/graph/STATS.md`](data/graph/STATS.md), regenerated by the build: node and edge counts, the text-mining funnel (abstracts read, facts kept, facts dropped and why), reviewer verdicts, connectors.
+Steps 5 and 8 are the two things the Atlas is built around: **nothing is shown without evidence, and gaps are stated instead of filled.**
+
+| | |
+|---|---|
+| ![Intro](docs/screenshots/1-intro.png) | ![Home](docs/screenshots/2-home.png) |
+| ![Overview](docs/screenshots/3-overview.png) | ![Evidence drawer](docs/screenshots/5-evidence.png) |
+
+![Cited next steps](docs/screenshots/6-next-steps.png)
+
+---
+
+## Who it is for
+
+The brief names four people. Each has a door on the home page.
+
+| Person | Their question | Where the Atlas answers it |
+|---|---|---|
+| **Maria**, patient group leader | Who is like us, what exists, what do we do next? | A disease page: Connections, Research, Communities, 10× route |
+| **Devon**, newly diagnosed family | Is there a community for this? | A disease page, opened on **Communities** |
+| **Priya**, biotech scout | Which diseases could one mechanism treat? | **Mechanisms**: enter a pathway or gene, get ranked disease clusters |
+| **Dr. Osei**, researcher | Who else works on my mechanism? | **Connectors**: people whose trials, grants or papers span several diseases |
+
+## What is on a disease page
+
+Seven tabs, from least to most detail:
+
+| Tab | What it shows |
+|---|---|
+| **Overview** | One paragraph, five numbers, a one-line summary of every other tab |
+| **Biology** | Disease → gene → mechanisms → symptoms, the most specific first |
+| **Connections** | The map, the related diseases with what is shared and what differs, and the cited path between them |
+| **Research** | Reusable studies and registries, three cited next steps, researchers |
+| **Communities** | Patient organisations (with the sentence from their own website), related communities |
+| **10× route** | Starting a natural history study: from scratch versus reusing relatives' work, for every disease |
+| **Evidence** | How many facts of each kind, and what papers say, with quotes and a second model's verdict |
+
+---
+
+## How it meets the judging criteria
+
+| Criterion | What we built |
+|---|---|
+| **Graph quality** | 10 node types, 9 relation types, stable IDs (MONDO, HGNC, HPO, Reactome, GO, PMID, NCT). Clusters come from shared mechanisms and informative symptoms, not from disease names. Weak matches are labelled, not hidden. |
+| **Evidence integrity** | Every fact stores its source, date, strength and kind. Facts read from papers are kept only if the quoted sentence is in the abstract word for word, then a second model checks them. A check script fails the build if any rule is broken. |
+| **Patient progress** | Search → related disease → shared mechanism → existing study → patient group → cited next step, with "what an expert must check" beside it. |
+| **10× impact** | One milestone (a natural history study), real registered durations, stated assumptions, and no claimed saving without a source. |
+| **Product craft** | Starts with one paragraph and grows on request; one evidence drawer for every claim; honest empty states. |
+| **Built with OpenAI** | gpt-oss (OpenAI's open-weight models) does three jobs: extract facts from abstracts, review each extracted fact, and word the next steps. Code verifies each one. |
+
+---
+
+## How it works
+
+```
+ Public sources              Build (offline)                What ships              What you use
+┌──────────────────┐    ┌─────────────────────────┐    ┌──────────────────┐    ┌──────────────────┐
+│ MONDO, HPO,      │    │ src/etl     read sources│    │ data/graph/      │    │ src/atlas   API  │
+│ Orphadata, HGNC, │ ─► │ src/extract gpt-oss     │ ─► │  nodes.parquet   │ ─► │ web/        site │
+│ Reactome, GO,    │    │   reads abstracts       │    │  edges.parquet   │    │ (one process,    │
+│ ClinVar, PubMed, │    │ src/graph   join, score,│    │  + small tables  │    │  one command)    │
+│ ClinicalTrials,  │    │   review, check         │    │                  │    │                  │
+│ NIH RePORTER,    │    └─────────────────────────┘    └──────────────────┘    └──────────────────┘
+│ patient-group    │
+│ websites         │
+└──────────────────┘
+```
+
+The graph is built once, offline, and saved as small files. The website and API only read those files, so they start in a second and need no keys.
+
+### The three kinds of evidence
+
+| Shown as | Meaning | On the map |
+|---|---|---|
+| **Verified source** | Copied from a curated database or registry | Solid green line |
+| **Research literature** | Read from a paper by gpt-oss, or from a patient organisation's own website. The exact sentence is stored. | Dotted cyan line |
+| **Atlas-derived** | Computed by the Atlas (disease similarity). A lead to check, not an observation. | Dashed amber line |
+
+### Where gpt-oss is used, and how it is checked
+
+| Job | Model | The check that follows |
+|---|---|---|
+| Extract facts from PubMed abstracts | gpt-oss-20b and gpt-oss-120b | The quoted sentence must be in the abstract word for word; names must match IDs already in the graph |
+| Review each extracted fact | gpt-oss-120b | It sees only the claim, the quote and the paper title; its verdict is stored on the fact |
+| Word the next steps in plain language | gpt-oss-120b | Every line must cite fact IDs that were given to it, or the line is dropped |
+
+### What is in the graph
+
+22 diseases · 23 genes · 674 symptoms · 209 mechanisms · 342 clinical studies · 126 reusable assets · 233 grants · 606 researchers · 60 papers · 20 patient organisations, joined by about 3,960 facts. Full counts, including how many extracted facts were dropped and why, are in [`data/graph/STATS.md`](data/graph/STATS.md).
+
+---
 
 ## Rebuild the dataset
 
-```bash
-uv sync
-cp .env.example .env                       # fill in LLM_* and NCBI_* values
-uv run python -m src.graph.build           # first run downloads data; later runs use the caches
-uv run uvicorn src.atlas.server:app --port 8000     # API docs at http://localhost:8000/docs
-```
-
-The LLM steps are separate because they are slow and rate-limited. Both are resumable:
+You do not need to do this to use the site. It is here so the result can be reproduced.
 
 ```bash
-uv run python -m src.etl.org_scrape                 # re-read patient organisation sites (cached; Bright Data if configured)
-uv run python -m src.extract --spread --limit 60    # read more abstracts, taking turns between diseases
-uv run python -m src.graph.review                   # second-model verdicts for edges not reviewed yet
-uv run python -m src.graph.build                    # fold the results into the graph
+cp .env.example .env                 # add NCBI_API_KEY and NCBI_EMAIL for PubMed (optional but faster)
+uv run python -m src.graph.build     # downloads sources (about 230 MB) on the first run, then builds and checks
 ```
 
-## Limitations (honest)
+The build runs these steps in order and stops if the evidence check fails:
 
-- 22 diseases only. OMIM is not used. Variants are counts per gene (ClinVar), not individual variants.
-- 120 of 712 on-topic abstracts have been read: the free Groq tier allows 200,000 tokens per model per day. Text-mined edges supplement the curated graph; they do not replace it.
-- Reviewer verdicts were produced in more than one pass as the prompt improved, and the daily quota ran out before the last pass finished, so some verdicts are stricter than others. Re-run `src.graph.review` to finish.
-- Patient organisations: 20, covering all 22 diseases. 5 were read by a person; the rest are linked because their own website names the disease repeatedly or in the organisation's name, with that sentence stored. "Names the disease" is weaker than "runs a programme for it", and registry mentions are sentences from their sites, not verified registries.
-- Reactome has no specific pathway for CLN5, CLN6, CLN7 or CLN8. Gene Ontology processes fill that gap for navigation, but the similarity score still uses Reactome only, so the NCL cluster rests on symptoms.
-- A paper that names only the disease family ("Batten disease") is linked to a subtype only when it was retrieved for exactly one subtype; those edges are marked and carry lower confidence.
-- Paper authors are matched to known investigators by full name only, at lower confidence.
-- Similarity uses HPO annotations, which are uneven across diseases.
+`download → biology → research → Gene Ontology → patient organisations → timelines → similarity → text-mined facts → review → connections → statistics → check`
 
-## Scale-up path
+What to expect:
 
-Run the same extraction on a GPU (gpt-oss via vLLM) or a paid tier for all 712 abstracts; add more diseases to `data/manual/diseases.csv`; add more hand-checked patient organisations.
+- **The gpt-oss results are included** (`data/cache/extractions.jsonl`, `reviews.jsonl` and the abstracts they came from), so a rebuild reuses them and needs no LLM quota.
+- **Trials, grants, papers and organisation pages are fetched live** on a fresh clone, so counts can shift slightly as those sources update.
+- To read more abstracts or review more facts, add an LLM key to `.env` and run `uv run python -m src.extract --spread --limit 60`, then `uv run python -m src.graph.review`, then the build again.
+
+Changing the website needs Node 20+: `cd web && npm install && npm run build`.
+
+---
+
+## What it does not do yet
+
+- **22 diseases only**, hand-picked. Adding one means adding a row to `data/manual/diseases.csv` and rebuilding.
+- **120 of 712 relevant abstracts have been read**, limited by free model quota. Paper facts add to the database facts; they do not replace them.
+- **19 of 117 paper facts are not yet reviewed**, and earlier verdicts came from a stricter prompt, so some correct facts are marked "not supported".
+- **No contradictions were found.** The extraction records denials, but the four it found were about diseases outside the 22.
+- **Patient organisations:** 5 were read by a person; 15 are linked because their own website names the disease repeatedly. Registry mentions are sentences from their sites, not verified registries.
+- **The Connectors ranking counts breadth only.** It does not yet weigh whether a study ran or how recent it is, so the top entry can be someone listed on withdrawn studies.
+- **Similarity uses Reactome pathways and HPO symptoms.** Four Batten genes have no Reactome pathway, so that cluster rests on symptoms; Gene Ontology fills the gap for navigation but not for scoring.
+- **Desktop only.** There is no mobile layout, and the site is not deployed to a public URL.
+
+---
+
+## Where things are
+
+| Path | What it is |
+|---|---|
+| `web/` | The website (React). `web/dist` is the built site the server serves. |
+| `src/atlas/` | The API (`server.py`) and the query functions behind it (`queries.py`) |
+| `src/etl/`, `src/graph/`, `src/extract.py`, `src/llm.py` | The build: reading sources, gpt-oss extraction and review, similarity, checks |
+| `data/graph/` | The built graph. `STATS.md` has the numbers. |
+| `data/manual/` | Hand-maintained inputs: the disease list and patient organisations |
+| `docs/BACKEND_GUIDE.md` | How the backend works, in plain language |
+| `docs/BACKEND_API.md` | Every endpoint and what it returns |
+| `docs/challenge-brief.pdf` | The challenge brief |
+| `CLAUDE.md` | Notes for working on the code |
+
+## Credits
+
+The intro animation, the staged map reveal and the plain evidence labels come from the Streamlit redesign in [krishna27-spec/rare-disease-atlas](https://github.com/krishna27-spec/rare-disease-atlas), rebuilt here on the new backend. Data: MONDO, HPO, Orphadata (CC BY 4.0), HGNC, Reactome, Gene Ontology, ClinVar, PubMed, ClinicalTrials.gov, NIH RePORTER.
