@@ -30,6 +30,17 @@ Then open **http://localhost:8000**.
 
 **Optional:** to get the three "next steps" written in plain language by gpt-oss, copy `.env.example` to `.env` and put a Groq API key in `LLM_API_KEY`. Without it the same steps are shown in the Atlas's own wording, with the same evidence.
 
+### Put it on a public address
+
+The repository has a `Dockerfile` and a `render.yaml`, so it deploys as one small web service.
+
+1. Sign in at [render.com](https://render.com) with GitHub.
+2. **New → Blueprint**, pick this repository, **Apply**.
+3. When asked for `LLM_API_KEY`, paste a Groq key, or leave it empty (the site works without it).
+4. After the build, Render shows the public address (`https://atlas-ai-….onrender.com`).
+
+On the free plan the service sleeps when idle, so the first visit after a pause takes up to a minute. The same `Dockerfile` works on Fly.io, Railway or a Hugging Face Docker Space.
+
 ---
 
 ## A three-minute tour
