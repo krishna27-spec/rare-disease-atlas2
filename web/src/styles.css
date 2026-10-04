@@ -84,14 +84,6 @@ p { margin: 0; }
 .empty { padding: 18px; color: var(--text-2); font-size: 15px; }
 .empty b { color: var(--text); font-weight: 600; }
 
-.doors { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; width: 100%; margin-top: 40px; }
-.door { text-align: left; padding: 22px; border-radius: var(--radius); border: 1px solid var(--line); background: linear-gradient(180deg, rgba(30, 25, 48, 0.72), rgba(23, 19, 33, 0.5)); transition: transform 0.45s var(--ease), border-color 0.3s, box-shadow 0.45s var(--ease); display: flex; flex-direction: column; gap: 8px; min-height: 168px; }
-.door:hover { transform: translateY(-6px); border-color: rgba(139, 92, 246, 0.6); box-shadow: 0 30px 60px -30px rgba(109, 59, 255, 0.8); }
-.door .who { font-size: 13px; color: var(--lavender); letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; }
-.door .say { font-size: 19px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.25; }
-.door .get { font-size: 14px; color: var(--text-2); margin-top: auto; }
-@media (max-width: 900px) { .doors { grid-template-columns: repeat(2, 1fr); } }
-
 /* disease page */
 .page { padding: 56px 0 140px; }
 .titleblock { display: flex; flex-direction: column; gap: 16px; align-items: center; text-align: center; }

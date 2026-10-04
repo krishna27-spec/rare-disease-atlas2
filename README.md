@@ -61,14 +61,14 @@ Steps 5 and 9 are the two things the Atlas is built around: **nothing is shown w
 
 ## Who it is for
 
-The brief names four people. Each has a door on the home page.
+The brief names four people. One site serves all of them.
 
 | Person | Their question | Where the Atlas answers it |
 |---|---|---|
 | **Maria**, patient group leader | Who is like us, what exists, what do we do next? | A disease page: Connections, Research, Communities, 10× route |
-| **Devon**, newly diagnosed family | Is there a community for this? | A disease page, opened on **Communities** |
-| **Priya**, biotech scout | Which diseases could one mechanism treat? | **Mechanisms**: enter a pathway or gene, get ranked disease clusters |
-| **Dr. Osei**, researcher | Who else works on my mechanism? | **Connectors**: people whose trials, grants or papers span several diseases |
+| **Devon**, newly diagnosed family | Is there a community for this? | A disease page: Overview for the key facts, then **Communities** |
+| **Priya**, biotech scout | Which diseases could one mechanism treat? | **Mechanisms** in the top bar: enter a pathway or gene, get ranked disease clusters |
+| **Dr. Osei**, researcher | Who else works on my mechanism? | **Connectors** in the top bar: people whose trials, grants or papers span several diseases |
 
 ## What is on a disease page
 
