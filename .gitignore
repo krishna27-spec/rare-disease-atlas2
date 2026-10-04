@@ -9,3 +9,5 @@ data/cache/
 .venv/
 __pycache__/
 *.pyc
+node_modules/
+web/dist/

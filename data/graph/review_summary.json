@@ -1,8 +1,8 @@
 {
  "verdicts": {
   "supported": 67,
-  "not_reviewed": 33,
   "unsupported": 22,
+  "not_reviewed": 19,
   "partial": 9
  },
  "models": [

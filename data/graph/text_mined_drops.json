@@ -1,6 +1,6 @@
 {
  "pathway predicate has no disease->pathway home": 52,
- "out of scope (disease not one of ours / not this paper's)": 111,
- "unresolved (name not in graph)": 104,
- "quote does not name the gene/symptom": 22
+ "out of scope (disease not one of ours / not this paper's)": 128,
+ "unresolved (name not in graph)": 103,
+ "quote does not name the gene/symptom": 20
 }

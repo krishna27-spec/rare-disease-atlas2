@@ -80,8 +80,11 @@ def main() -> None:
         matches = match_diseases(f["disease"])
         mondo = [d for d, kind in matches if kind == "specific" and d in f["disease_ids"]]
         family = False
-        if not mondo:   # the abstract uses a family name ("Batten disease"): accept only if exactly one of the
-            fam = [d for d, kind in matches if kind == "broad" and d in f["disease_ids"]]   # paper's diseases fits
+        # The abstract uses a family name ("Batten disease"): accept only if exactly one of the paper's diseases
+        # fits, and only for symptoms. Each subtype has its own gene, so a family-level gene statement
+        # ("Sanfilippo is caused by SGSH, NAGLU, ...") must never be pinned on one subtype.
+        if not mondo and f["predicate"] == "has_phenotype":
+            fam = [d for d, kind in matches if kind == "broad" and d in f["disease_ids"]]
             if len(fam) == 1:
                 mondo, family = fam, True
         if len(mondo) != 1:

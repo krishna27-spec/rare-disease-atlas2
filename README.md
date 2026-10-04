@@ -23,7 +23,8 @@ sources   MONDO, HPO, Orphadata, HGNC, Reactome, Gene Ontology, ClinVar, PubMed,
    -> src/graph/    nodes + edges, similarity + Louvain clusters, connection tables, review, checks
    -> data/graph/   nodes.parquet, edges.parquet, derived tables, STATS.md
    -> src/atlas/    query layer (queries.py) and JSON API (server.py); reads data/graph only
-   -> UI            any front end, over HTTP (docs/BACKEND_GUIDE.md explains it; docs/BACKEND_API.md lists the endpoints)
+   -> web/          the website (React), served by the same process once built
+                    (docs/BACKEND_GUIDE.md explains the API; docs/BACKEND_API.md lists the endpoints)
 ```
 
 The four capabilities of the brief map to the API: **search engine** (`/search`), **clustering** (`/clusters`, `/disease/{id}/neighbours`, `/mechanism`), **pathway navigator** (`/disease/{id}/pathways`), **connector** (`/connectors`).
@@ -38,7 +39,23 @@ The four capabilities of the brief map to the API: **search engine** (`/search`)
 
 The graph is built offline. The API never calls an LLM to build it, and the next-steps endpoint falls back to the cited candidate list if the LLM is unavailable.
 
-## Evidence model
+## The website
+
+`web/` is a React site (Vite, Framer Motion, a custom canvas graph) on top of the API. Build it once and the API process serves it:
+
+```bash
+cd web && npm install && npm run build && cd ..
+uv run uvicorn src.atlas.server:app --port 8000     # site at http://localhost:8000, API docs at /docs
+```
+
+For front-end work, run the API as above and `npm run dev` in `web/` (requests are proxied to port 8000).
+
+- **Landing:** one search box and four doors, one for each person in the brief.
+- **Disease page:** the graph as a constellation (the disease in the centre, its gene, shared mechanisms, similar diseases, patient groups), then five chapters: Understand, Who is like us, What exists, Who can help, What to do next. A "simple view" shows a family the community and next steps first.
+- **Mechanisms:** rank disease clusters for a pathway, process or gene. **Connectors:** people and organisations that link diseases.
+- Any "Why?" chip, card or graph line opens one evidence drawer with the source, date, confidence, quote and reviewer verdict.
+
+
 
 Every edge carries `source`, `source_record`, `source_url`, `retrieved` date, `confidence` and one of three evidence types:
 

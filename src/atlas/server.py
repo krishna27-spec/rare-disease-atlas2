@@ -1,13 +1,16 @@
 """HTTP wrapper around src/atlas/queries.py, so a UI in any language can use the Atlas.
 
 Run:  uv run uvicorn src.atlas.server:app --port 8000        (interactive docs at http://localhost:8000/docs)
+If web/dist exists (cd web && npm run build) the website is served at / by the same process.
 Every endpoint is a GET that returns JSON. Disease IDs are MONDO IDs, e.g. /disease/MONDO:0009657 (MPS IIIC).
 The graph is loaded once at start-up; restart the server after a rebuild.
 """
 from functools import lru_cache
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from src.atlas.queries import Atlas
 
@@ -121,3 +124,9 @@ def contradictions():
 @app.get("/stats", tags=["Evidence"])
 def stats():
     return atlas().stats()
+
+
+# ---- the website: served from the same process when it has been built (cd web && npm run build)
+SITE = Path(__file__).resolve().parents[2] / "web" / "dist"
+if SITE.exists():
+    app.mount("/", StaticFiles(directory=SITE, html=True), name="site")
