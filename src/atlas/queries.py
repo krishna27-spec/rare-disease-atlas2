@@ -23,6 +23,7 @@ from rapidfuzz import fuzz, process
 from src.webapp.data import GRAPH, NEIGHBOUR_MIN, USEFUL_KINDS, Graph
 
 MIN_SEARCH_SCORE = 88
+ACTIVE = ["RECRUITING", "ACTIVE_NOT_RECRUITING", "NOT_YET_RECRUITING", "ENROLLING_BY_INVITATION"]
 EDGE_FIELDS = ["edge_id", "subject", "predicate", "object", "evidence_type", "confidence", "source", "source_record",
                "source_url", "retrieved", "evidence_text", "method", "contradicts", "reviewer_verdict"]
 
@@ -148,6 +149,7 @@ class Atlas:
                 h["diseases"] = self._diseases_for(h["kind"], h["id"])
         out = {"query": q, "hits": ranked}
         if not ranked:
+            out["known_elsewhere"] = self.outside(q)   # real rare diseases the Atlas has not loaded yet
             n = self.nodes.node_type.value_counts()
             out["no_match"] = {
                 "message": f"Nothing in the Atlas matches '{q}'. That means it is outside what was loaded, "
@@ -184,6 +186,7 @@ class Atlas:
                        "facts_from_papers": len(tm),
                        "edges_by_evidence_type": mine.evidence_type.value_counts().to_dict()},
             "comparison_note": self.G.comparison_note(d),
+            "key_facts": self.key_facts(d),
             "facts_from_papers": [self.edge(x, brief=True) for x in tm.edge_id],
         })
 
@@ -691,6 +694,156 @@ class Atlas:
                               "Whether relatives' protocols and registries can be shared (ask the sponsors).",
                               "Expert review of how well outcome measures transfer between these diseases."],
             "retrieved": str(tl.retrieved.iloc[0])})
+
+    # ------------------------------------------------------------------ landscape: how common, how far, how funded, where
+    def _tables(self):
+        if not hasattr(self, "_land"):
+            read = lambda f: pd.read_parquet(GRAPH / f) if (GRAPH / f).exists() else pd.DataFrame()
+            self._land = {k: read(f"{k}.parquet") for k in ("disease_facts", "trial_facts", "trial_sites", "outside_index")}
+        return self._land
+
+    def key_facts(self, d: str) -> dict:
+        """Prevalence by place, age of onset and inheritance, as Orphadata records them (each with its reference)."""
+        f = self._tables()["disease_facts"]
+        f = f[f.disease_id == d] if len(f) else f
+        prev = f[f.kind == "prevalence"] if len(f) else f
+        rows = [{"where": r.where, "value": r.value, "per_100k": r.per_100k, "measure": r.measure,
+                 "validated": r.validated, "pmid": r.reference, "source": r.source, "source_url": r.source_url}
+                for r in prev.sort_values(["validated", "per_100k"], ascending=False).itertuples()]
+        world = next((r for r in rows if r["where"] == "Worldwide"), None) or next((r for r in rows if r["where"] == "Europe"), None)
+        return {"prevalence": rows, "headline_prevalence": world,
+                "onset": sorted(set(f[f.kind == "onset"].value)) if len(f) else [],
+                "inheritance": sorted(set(f[f.kind == "inheritance"].value)) if len(f) else [],
+                "source": "Orphadata product 9", "source_url": prev.source_url.iloc[0] if len(prev) else
+                (f.source_url.iloc[0] if len(f) else "")}
+
+    def landscape(self, d: str) -> dict:
+        """Beyond the brief: how common the disease is and where, how far its trials got, what stopped them,
+        how much public funding is on record, where the work happens, and which milestones are still missing.
+
+        Every number is a count of registry records. Nothing is estimated and no success probability is claimed."""
+        self._need_disease(d)
+        T, e, name = self._tables(), self.edges, self.name(d)
+        mine = e[(e.subject == d) & (e.predicate == "studied_in_trial")]
+        edge_of = dict(zip(mine.object, mine.edge_id))
+        tf = T["trial_facts"]
+        tf = tf[tf.nct.isin(edge_of)].copy() if len(tf) else tf
+        title = lambda nct: self.name(nct)
+        trial = lambda r: {"nct": r.nct, "title": title(r.nct), "status": r.status, "phases": r.phases.split("|") if r.phases else [],
+                           "enrollment": r.enrollment, "start": r.start, "completion": r.completion,
+                           "why_stopped": r.why_stopped, "has_results": r.has_results,
+                           "interventions": r.interventions.split("|")[:3] if r.interventions else [],
+                           "source_url": r.source_url, "edge_ids": [edge_of[r.nct]]}
+        # ---- how far have treatment trials gone
+        iv = tf[tf.study_type == "INTERVENTIONAL"] if len(tf) else tf
+        order = [("EARLY_PHASE1", "Early phase 1"), ("PHASE1", "Phase 1"), ("PHASE2", "Phase 2"), ("PHASE3", "Phase 3"), ("PHASE4", "Phase 4")]
+        phases = []
+        for key, label in order:
+            rows = iv[iv.phases.str.split("|").map(lambda ps: key in ps)] if len(iv) else iv
+            phases.append({"phase": label, "n": len(rows), "completed": int((rows.status == "COMPLETED").sum()) if len(rows) else 0,
+                           "active": int(rows.status.isin(ACTIVE).sum()) if len(rows) else 0,
+                           "edge_ids": [edge_of[x] for x in rows.nct][:12] if len(rows) else []})
+        ended = iv[iv.status.isin(["COMPLETED", "TERMINATED", "WITHDRAWN"])] if len(iv) else iv
+        done = int((ended.status == "COMPLETED").sum()) if len(ended) else 0
+        stopped = iv[(iv.why_stopped != "") & iv.status.isin(["TERMINATED", "WITHDRAWN", "SUSPENDED"])] if len(iv) else iv
+        kinds = pd.Series([k for ks in iv.intervention_types for k in ks.split("|") if k]).value_counts().to_dict() if len(iv) else {}
+        furthest = next((p["phase"] for p in reversed(phases) if p["n"]), None)
+        # ---- funding on record
+        gr = e[(e.subject == d) & (e.predicate == "funded_by")]
+        grants = []
+        for r in gr.itertuples():
+            a = _attrs(self.nodes.loc[r.object, "attrs"])
+            grants.append({"grant": r.object, "title": self.name(r.object), "amount": a.get("award_amount"),
+                           "fiscal_year": a.get("fiscal_year"), "organization": a.get("organization", ""),
+                           "source_url": f"https://reporter.nih.gov/project-details/{r.object}", "edge_ids": [r.edge_id]})
+        total = sum(g["amount"] or 0 for g in grants)
+        compare = []
+        for x in [d] + [m for m, c in self.G.cluster_of.items() if c == self.G.cluster_of[d] and m != d]:
+            gx = e[(e.subject == x) & (e.predicate == "funded_by")]
+            amt = sum((_attrs(self.nodes.loc[o, "attrs"]).get("award_amount") or 0) for o in gx.object)
+            compare.append({"id": x, "name": self.name(x), "amount": amt, "n_grants": len(gx), "is_this": x == d})
+        # ---- where the work happens
+        st = T["trial_sites"]
+        st = st[st.nct.isin(edge_of)] if len(st) else st
+        status_of = dict(zip(tf.nct, tf.status)) if len(tf) else {}
+        cities = []
+        if len(st):
+            for (city, country), g in st[st.lat.notna()].groupby(["city", "country"]):
+                ncts = sorted(set(g.nct))
+                cities.append({"city": city, "country": country, "lat": g.lat.iloc[0], "lon": g.lon.iloc[0],
+                               "n_studies": len(ncts), "recruiting": bool((g.site_status == "RECRUITING").any()),
+                               "facilities": sorted(set(g.facility))[:3], "edge_ids": [edge_of[x] for x in ncts][:8]})
+        cities.sort(key=lambda c: -c["n_studies"])
+        countries = (st.groupby("country").nct.nunique().sort_values(ascending=False).to_dict() if len(st) else {})
+        now = st[st.site_status == "RECRUITING"] if len(st) else st
+        recruiting = [{"nct": n, "title": title(n), "places": sorted({f"{r.city}, {r.country}" for r in g.itertuples()})[:6],
+                       "n_sites": len(g), "source_url": g.source_url.iloc[0], "edge_ids": [edge_of[n]]}
+                      for n, g in now.groupby("nct") if status_of.get(n) == "RECRUITING"] if len(now) else []
+        # ---- milestones on the way to a treatment, each one a fact in the graph or a registry record
+        assets = self.G.assets[self.G.assets.disease_id == d]
+        kind_ids = lambda k: assets[assets.kind == k].edge_id.tolist()
+        recent = [g for g in grants if (g["fiscal_year"] or 0) >= 2024]
+        late = [p for p in phases if p["phase"] in ("Phase 3", "Phase 4") and p["n"]]
+        steps = [
+            ("Causal gene known", [x for g in self.genes_of(d) for x in g["edge_ids"]], "Without a gene there is no mechanism to target."),
+            ("Patient organisation exists", [x for o in self.orgs_of(d) for x in o["edge_ids"]][:4], "Someone to gather families, data and funding."),
+            ("Patient registry", kind_ids("registry"), "A list of who has the disease and how to reach them."),
+            ("Natural history study", kind_ids("natural history study"), "How the disease progresses untreated: what regulators ask for first."),
+            ("Research funded recently", [x for g in recent for x in g["edge_ids"]][:6], "An NIH grant active in 2024 or later."),
+            ("A treatment trial has started", [edge_of[x] for x in iv.nct][:8] if len(iv) else [], "Any interventional study registered."),
+            ("A treatment trial is recruiting now", [edge_of[x] for x in iv[iv.status == "RECRUITING"].nct] if len(iv) else [], "Families can take part today."),
+            ("A late-stage trial (phase 3) exists", [x for p in late for x in p["edge_ids"]][:8], "The last step before a treatment can be approved."),
+        ]
+        milestones = [{"step": s, "reached": bool(ids), "why_it_matters": why, "edge_ids": ids} for s, ids, why in steps]
+        missing = [m["step"] for m in milestones if not m["reached"]]
+        return clean({
+            "disease": {"id": d, "name": name},
+            "key_facts": self.key_facts(d),
+            "milestones": {"steps": milestones, "reached": len(milestones) - len(missing), "of": len(milestones),
+                           "next_missing": missing[0] if missing else None,
+                           "note": "On record in the Atlas's sources. A missing step may exist outside them."},
+            "trials": {"n_interventional": len(iv), "n_observational": len(tf) - len(iv), "phases": phases,
+                       "furthest_phase": furthest,
+                       "finished": {"completed": done, "ended": len(ended),
+                                    "share_completed": round(done / len(ended), 2) if len(ended) else None,
+                                    "note": "Share of ended treatment trials that ran to completion rather than being "
+                                            "terminated or withdrawn. It says nothing about whether the treatment worked."},
+                       "posted_results": int(iv.has_results.sum()) if len(iv) else 0,
+                       "what_was_tested": kinds,
+                       "why_stopped": [trial(r) for r in stopped.itertuples()],
+                       "participants_enrolled": int(iv.enrollment.fillna(0).sum()) if len(iv) else 0},
+            "funding": {"total_usd": total, "n_grants": len(grants), "source": "NIH RePORTER",
+                        "note": "Sum of the most recent fiscal-year award of each NIH grant found. US public funding "
+                                "only; it is not the cost of developing a treatment, for which no cited figure is used.",
+                        "top": sorted([g for g in grants if g["amount"]], key=lambda g: -g["amount"])[:5],
+                        "in_cluster": sorted(compare, key=lambda c: -c["amount"])},
+            "where": {"n_sites": len(st), "n_countries": len(countries), "countries": countries, "cities": cities[:160],
+                      "recruiting_now": recruiting},
+        })
+
+    def outside(self, q: str, limit: int = 3) -> list[dict]:
+        """Rare diseases that match a search but are not loaded: what they are, and what adding them would take."""
+        t = self._tables()["outside_index"]
+        text = q.strip().lower()
+        if not len(t) or len(text) < 3:
+            return []
+        if not hasattr(self, "_outside_names"):
+            names = [(r.name.lower(), i) for i, r in enumerate(t.itertuples())]
+            names += [(s.lower(), i) for i, r in enumerate(t.itertuples()) for s in r.synonyms.split("|") if s]
+            self._outside_names = names
+        found = process.extract(text, [n for n, _ in self._outside_names], scorer=fuzz.WRatio, limit=12, score_cutoff=86)
+        seen, out = set(), []
+        for _, score, k in found:
+            i = self._outside_names[k][1]
+            if i in seen:
+                continue
+            seen.add(i)
+            r = t.iloc[i]
+            out.append({"mondo_id": r.mondo_id, "name": r["name"], "genes": [g for g in r.genes.split("|") if g],
+                        "orphanet_url": f"https://www.orpha.net/en/disease/detail/{r.orpha}",
+                        "to_add": f"Add one row to data/manual/diseases.csv ({r.mondo_id}"
+                                  + (f", gene {r.genes.split('|')[0]}" if r.genes else "") + ") and rebuild."})
+        return out[:limit]
 
     # ------------------------------------------------------------------ numbers
     def stats(self) -> dict:

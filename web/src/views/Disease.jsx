@@ -1,11 +1,12 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import ConstellationGraph from "../components/ConstellationGraph.jsx";
+import WorldMap from "../components/WorldMap.jsx";
 import { Card, Gap, Limit, Skeletons, Why, pretty } from "../components/ui.jsx";
 import { useApi, useEvidence } from "../hooks.js";
 
 // One disease, seven views of the same Atlas. Overview says the least; each tab goes one step deeper.
-const TABS = [["overview", "Overview"], ["biology", "Biology"], ["connections", "Connections"], ["research", "Research"], ["communities", "Communities"], ["tenx", "10× route"], ["evidence", "Evidence"]];
+const TABS = [["overview", "Overview"], ["biology", "Biology"], ["connections", "Connections"], ["research", "Research"], ["landscape", "Landscape"], ["communities", "Communities"], ["tenx", "10× route"], ["evidence", "Evidence"]];
 const KIND_ORDER = ["natural history study", "registry", "observational study", "interventional trial"];
 const LAYERS = ["mechanism", "related", "groups", "symptoms"];
 const list = (xs, n = 3) => xs.slice(0, n).join(", ");
@@ -36,7 +37,7 @@ function Org({ o, disease }) {
 }
 
 /* ------------------------------------------------------------------ Overview */
-function Overview({ d, nb, assets, conn, tenx, setTab }) {
+function Overview({ d, nb, assets, conn, tenx, land, setTab }) {
   const strong = nb ? nb.neighbours.filter((n) => n.supported) : [];
   const genes = d.genes.map((g) => g.gene);
   const ev = d.counts.edges_by_evidence_type;
@@ -45,6 +46,7 @@ function Overview({ d, nb, assets, conn, tenx, setTab }) {
     ["biology", "Biology", `How ${list(genes)} leads to ${plural(d.counts.phenotypes, "recorded symptom")}.`],
     ["connections", "Connections", strong.length ? `${plural(strong.length, "related disease")} on the map. The closest is ${strong[0].name}.` : "No disease is similar enough to recommend yet."],
     ["research", "Research", `${plural(d.counts.trials, "study", "studies")} and ${plural(d.counts.grants, "grant")}${nh ? `, including ${plural(nh, "natural history study or registry", "natural history studies and registries")}` : ""}.`],
+    ["landscape", "Landscape", land ? `${land.milestones.reached} of ${land.milestones.of} milestones toward a treatment reached. Studies in ${plural(land.where.n_countries, "country", "countries")}.` : "How common, how far, how funded, and where."],
     ["communities", "Communities", `${plural(d.patient_orgs.length, "patient organisation")}${conn && conn.n_people ? ` and ${plural(conn.n_people, "researcher")} working across related diseases` : ""}.`],
     ["tenx", "10× route", tenx ? (tenx.supported ? `${plural(tenx.numbers.own, "natural history study", "natural history studies")} here, ${tenx.numbers.relatives} in close relatives to build on.` : "No study to build on yet. See what is missing.") : "A faster route to a natural history study."],
     ["evidence", "Evidence", `${(ev.curated || 0) + (ev.text_mined || 0) + (ev.inferred || 0)} facts: ${ev.curated || 0} verified, ${ev.text_mined || 0} from literature, ${ev.inferred || 0} Atlas-derived.`],
@@ -59,7 +61,8 @@ function Overview({ d, nb, assets, conn, tenx, setTab }) {
         <Why ids={d.genes.flatMap((g) => g.edge_ids)} title={`${list(genes)} and ${d.name}`} label="Why this gene?" />
         {d.synonyms.filter((s) => s.length < 34).slice(0, 3).map((s) => <span key={s} className="chip">{s}</span>)}
       </div>
-      <div className="stats" style={{ marginTop: 44 }}>
+      <KeyFacts k={d.key_facts} />
+      <div className="stats" style={{ marginTop: 40 }}>
         <div className="stat"><b>{d.counts.phenotypes}</b><span>symptoms on record</span></div>
         <div className="stat"><b>{strong.length}</b><span>close relatives</span></div>
         <div className="stat"><b>{d.counts.trials}</b><span>clinical studies</span></div>
@@ -76,6 +79,24 @@ function Overview({ d, nb, assets, conn, tenx, setTab }) {
         </div>
       </Sec>
     </>
+  );
+}
+
+// Three facts a family asks first, as Orphadata records them. Absent ones are simply not shown.
+function KeyFacts({ k }) {
+  if (!k) return null;
+  const p = k.headline_prevalence, items = [
+    p && ["How common", p.value.replace(/ /g, " "), `${p.where}, ${p.measure.toLowerCase()}`],
+    k.onset.length && ["Usually starts in", k.onset.join(", "), "age of onset"],
+    k.inheritance.length && ["Inherited as", k.inheritance.join(", "), "both parents carry it" ],
+  ].filter(Boolean);
+  if (!items.length) return null;
+  if (items[2] && !/recessive/i.test(k.inheritance.join())) items[2][2] = "pattern of inheritance";
+  return (
+    <div className="facts">
+      {items.map(([label, value, sub]) => <div className="fact" key={label}><span>{label}</span><b>{value}</b><small>{sub}</small></div>)}
+      <a className="chip" href={k.source_url} target="_blank" rel="noreferrer">Orphanet ↗</a>
+    </div>
   );
 }
 
@@ -229,6 +250,102 @@ function Research({ d, id, assets, conn }) {
   );
 }
 
+/* ------------------------------------------------------------------ Landscape */
+const usd = (n) => (n >= 1e6 ? `$${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `$${Math.round(n / 1e3)}K` : `$${n}`);
+function Landscape({ d, land }) {
+  const open = useEvidence();
+  const [mode, setMode] = useState("sites");
+  if (!land) return <Skeletons />;
+  const { milestones: m, trials: t, funding: f, where: w, key_facts: k } = land;
+  const maxPhase = Math.max(...t.phases.map((p) => p.n), 1), maxFund = Math.max(...f.in_cluster.map((c) => c.amount), 1);
+  const hasPrev = k.prevalence.some((p) => p.per_100k && !["Europe", "Worldwide", "Specific population"].includes(p.where));
+  const regions = k.prevalence.filter((p) => ["Europe", "Worldwide"].includes(p.where));
+  return (
+    <>
+      <Head title="Where does this disease stand?" sub="How far it has come on the way to a treatment, what the trials so far show, the public funding on record, and where in the world the work happens. Every figure is a count of registry records." />
+
+      <section className="sec" style={{ marginTop: 0 }}>
+        <h3>The road to a treatment</h3>
+        <p className="sub">{m.reached} of {m.of} milestones are on record.{m.next_missing ? ` The first one missing: ${m.next_missing.toLowerCase()}.` : " None is missing."} {m.note}</p>
+        <div className="road">
+          {m.steps.map((s, i) => (
+            <button key={s.step} className={"mile" + (s.reached ? " on" : "")} onClick={() => s.reached && open(s.step, s.edge_ids)} title={s.why_it_matters} disabled={!s.reached}>
+              <span className="dot">{s.reached ? "✓" : i + 1}</span><b>{s.step}</b><small>{s.reached ? "on record" : "not on record"}</small>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <Sec title="Where in the world" sub={mode === "sites" ? `${w.n_sites} study sites in ${plural(w.n_countries, "country", "countries")}. Larger glows mean more studies in that city; green means one is recruiting now.` : "Countries with a reported figure. Brighter means more common. A dark country has no reported figure, which is not the same as no patients."}>
+        <div className="chips" style={{ marginBottom: 14 }}>
+          <button className={"chip" + (mode === "sites" ? " sel" : "")} onClick={() => setMode("sites")}>Where studies run</button>
+          {hasPrev && <button className={"chip" + (mode === "prevalence" ? " sel" : "")} onClick={() => setMode("prevalence")}>Where it is more common</button>}
+        </div>
+        <WorldMap cities={w.cities} prevalence={k.prevalence} mode={mode} />
+        {mode === "sites" ? (
+          <div className="chips" style={{ marginTop: 14 }}>{Object.entries(w.countries).slice(0, 10).map(([c, n]) => <span key={c} className="chip">{c} · {n}</span>)}{w.n_countries > 10 && <span className="chip">+{w.n_countries - 10} more</span>}</div>
+        ) : (
+          <div className="rows" style={{ marginTop: 14 }}>{k.prevalence.filter((p) => p.per_100k).slice(0, 8).map((p, i) => (
+            <div className="row" key={i}><div className="grow">{p.where}<div className="sub">{p.measure}{p.validated ? "" : " · not yet validated"}{p.pmid ? ` · ${/^\d+$/.test(p.pmid) ? "PMID " + p.pmid : p.pmid.replace(/\[.*\]/, "")}` : ""}</div></div><span className="soft">{p.value}</span></div>
+          ))}</div>
+        )}
+        {regions.length > 0 && mode === "prevalence" && <p className="small muted" style={{ marginTop: 10 }}>Regional figures: {regions.map((p) => `${p.where} ${p.value}`).join("; ")}.</p>}
+      </Sec>
+
+      {w.recruiting_now.length > 0 && (
+        <Sec title="Taking part now" sub="Studies with at least one site recruiting. Check eligibility with the study team.">
+          <div className="rows">{w.recruiting_now.map((r) => (
+            <div className="row" key={r.nct}><div className="grow">{r.title}<div className="sub">{r.places.join(" · ")}{r.n_sites > r.places.length ? ` · +${r.n_sites - r.places.length} more sites` : ""}</div></div><a className="chip" href={r.source_url} target="_blank" rel="noreferrer">{r.nct} ↗</a><Why ids={r.edge_ids} title={r.title} /></div>
+          ))}</div>
+        </Sec>
+      )}
+
+      <Sec title="How far treatment trials have gone" sub={t.n_interventional ? `${plural(t.n_interventional, "treatment trial")} registered, ${t.participants_enrolled} participants planned or enrolled in total. The furthest stage reached is ${(t.furthest_phase || "not stated").toLowerCase()}.` : "No treatment trial is registered for this disease."}>
+        {t.n_interventional > 0 && (
+          <div className="two-col">
+            <div className="bars">{t.phases.filter((p) => p.phase !== "Early phase 1" || p.n).map((p) => (
+              <button className="hbar" key={p.phase} onClick={() => p.n && open(`${p.phase} trials for ${d.name}`, p.edge_ids)} disabled={!p.n}>
+                <span>{p.phase}</span><i><em style={{ width: `${(p.n / maxPhase) * 100}%` }} /></i><b>{p.n}</b>
+              </button>
+            ))}</div>
+            <div className="card">
+              <span className="meta">Of the trials that have ended</span>
+              <h3>{t.finished.ended ? `${t.finished.completed} of ${t.finished.ended} ran to completion` : "None has ended yet"}</h3>
+              <p>{t.finished.note}</p>
+              <div className="chips">{Object.entries(t.what_was_tested).map(([kind, n]) => <span key={kind} className="chip">{pretty(kind)} · {n}</span>)}<span className="chip">{t.posted_results} posted results</span></div>
+            </div>
+          </div>
+        )}
+      </Sec>
+
+      {t.why_stopped.length > 0 && (
+        <Sec title="Why trials stopped" sub="In the sponsors' own words, from the registry. Worth reading before designing the next one.">
+          <div className="rows">{t.why_stopped.map((x) => (
+            <div className="row top" key={x.nct}><div className="grow">{x.title}<div className="quote" style={{ marginTop: 8 }}>“{x.why_stopped}”</div><div className="sub" style={{ marginTop: 6 }}>{pretty(x.status)}{x.phases.length ? ` · ${x.phases.map((ph) => pretty(ph).replace(/phase(\d)/, "phase $1")).join(", ")}` : ""}</div></div><a className="chip" href={x.source_url} target="_blank" rel="noreferrer">{x.nct} ↗</a><Why ids={x.edge_ids} title={x.title} /></div>
+          ))}</div>
+        </Sec>
+      )}
+
+      <Sec title="Public funding on record" sub={f.note}>
+        <div className="two-col">
+          <div>
+            <div className="stats"><div className="stat"><b>{usd(f.total_usd)}</b><span>across {plural(f.n_grants, "NIH grant")}</span></div></div>
+            <div className="rows" style={{ marginTop: 20 }}>{f.top.slice(0, 4).map((g) => (
+              <div className="row" key={g.grant}><div className="grow">{g.title}<div className="sub">{g.organization} · {g.fiscal_year}</div></div><span className="soft">{usd(g.amount)}</span><Why ids={g.edge_ids} title={g.title} /></div>
+            ))}</div>
+          </div>
+          <div>
+            <p className="small soft" style={{ marginBottom: 12 }}>Compared with the diseases in its cluster</p>
+            <div className="bars">{f.in_cluster.map((c) => (
+              <div className={"hbar" + (c.is_this ? " this" : "")} key={c.id}><span>{c.name}</span><i><em style={{ width: `${(c.amount / maxFund) * 100}%` }} /></i><b>{usd(c.amount)}</b></div>
+            ))}</div>
+          </div>
+        </div>
+      </Sec>
+    </>
+  );
+}
+
 /* ------------------------------------------------------------------ Communities */
 function Communities({ d, id, nb, conn, go }) {
   const [paths] = useApi(`/disease/${id}/pathways?max_paths=12`);
@@ -338,6 +455,7 @@ export default function Disease({ id, mode, go }) {
   const [assets] = useApi(`/disease/${id}/assets`);
   const [conn] = useApi(`/connectors?disease=${id}&limit=12`);
   const [tenx] = useApi(`/disease/${id}/ten-x`);
+  const [land] = useApi(`/disease/${id}/landscape`);
   useEffect(() => { window.scrollTo(0, 0); }, [id]);
   useEffect(() => {      // changing tab keeps the tab bar where it is instead of jumping to the top of the page
     const head = document.querySelector(".dhead");
@@ -363,10 +481,11 @@ export default function Disease({ id, mode, go }) {
         </div>
       </nav>
       <motion.div key={tab} className="wrap view" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}>
-        {tab === "overview" && <Overview d={d} nb={nb} assets={assets} conn={conn} tenx={tenx} setTab={setTab} />}
+        {tab === "overview" && <Overview d={d} nb={nb} assets={assets} conn={conn} tenx={tenx} land={land} setTab={setTab} />}
         {tab === "biology" && <Biology d={d} id={id} />}
         {tab === "connections" && <Connections d={d} id={id} nb={nb} go={go} />}
         {tab === "research" && <Research d={d} id={id} assets={assets} conn={conn} />}
+        {tab === "landscape" && <Landscape d={d} land={land} />}
         {tab === "communities" && <Communities d={d} id={id} nb={nb} conn={conn} go={go} />}
         {tab === "tenx" && <TenX t={tenx} />}
         {tab === "evidence" && <EvidenceView d={d} go={go} />}

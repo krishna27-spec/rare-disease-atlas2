@@ -39,7 +39,7 @@ Three layers, each only reading the output of the one before:
 
 Order matters, because `biology` creates `nodes.parquet`/`edges.parquet` and later steps add to them:
 
-`etl.download` → `etl.biology` (Disease/Gene/Phenotype/Pathway from MONDO, Orphadata, HPO, HGNC, Reactome, ClinVar) → `etl.research` (Trial/Grant/Investigator/Asset from ClinicalTrials.gov, NIH RePORTER, PubMed; also writes `data/cache/abstracts.jsonl`) → `etl.go` (Gene Ontology processes per gene, via QuickGO) → `etl.org_scrape` (reads patient organisations' own pages, cached) → `etl.orgs` (PatientOrg from the hand-checked `data/manual/patient_orgs.csv` plus `data/manual/org_scrape.jsonl`) → `etl.timelines` → `graph.similarity` (inferred `similar_to` edges, Louvain clusters) → `etl.filter_abstracts` → `extract --limit 0` → `graph.text_mined` (text-mined edges, Paper nodes, paper authors) → `graph.review --limit 0` → `graph.connections` (tables for the query layer, `contradicts` links) → `graph.stats` (`data/graph/STATS.md`) → `graph.check`.
+`etl.download` → `etl.biology` (Disease/Gene/Phenotype/Pathway from MONDO, Orphadata, HPO, HGNC, Reactome, ClinVar) → `etl.research` (Trial/Grant/Investigator/Asset from ClinicalTrials.gov, NIH RePORTER, PubMed; also writes `data/cache/abstracts.jsonl`) → `etl.go` (Gene Ontology processes per gene, via QuickGO) → `etl.org_scrape` (reads patient organisations' own pages, cached) → `etl.orgs` (PatientOrg from the hand-checked `data/manual/patient_orgs.csv` plus `data/manual/org_scrape.jsonl`) → `etl.landscape` (prevalence/onset/inheritance from Orphadata product 9, trial outcomes and sites from ClinicalTrials.gov, and an index of rare diseases not loaded) → `etl.timelines` → `graph.similarity` (inferred `similar_to` edges, Louvain clusters) → `etl.filter_abstracts` → `extract --limit 0` → `graph.text_mined` (text-mined edges, Paper nodes, paper authors) → `graph.review --limit 0` → `graph.connections` (tables for the query layer, `contradicts` links) → `graph.stats` (`data/graph/STATS.md`) → `graph.check`.
 
 `src.extract` and `src.graph.review` are called with `--limit 0`: no LLM calls, they only apply what is already cached in `data/cache/extractions.jsonl` and `reviews.jsonl`. Real extraction and review are separate manual runs. `review` must run after `text_mined` (which resets confidences and verdicts) and before `connections`.
 
@@ -97,6 +97,10 @@ IC-weighted Jaccard over HPO terms propagated up the ontology (weight 0.6) and n
 ### Shared constants
 
 Evidence-type colours (`COLOURS` in `webapp/data.py`: blue curated, orange text-mined, grey inferred) are reused by every view. `ten_x.py` hardcodes MPS IIIC (`MONDO:0009657`) as the demo disease.
+
+### Attribute tables (not edges)
+
+`etl.landscape` writes `disease_facts`, `trial_facts`, `trial_sites` and `outside_index` parquet files. They describe diseases and trials rather than relate two nodes, so rows carry `source` / `source_url` instead of edge IDs. `Atlas.landscape()` joins them back to the graph through each trial's `studied_in_trial` edge, which is what its `edge_ids` point at. Keep every figure there a count of registry records: no estimated costs or success probabilities.
 
 ### Query layer (`src/atlas/queries.py`)
 

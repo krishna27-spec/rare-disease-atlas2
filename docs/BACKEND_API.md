@@ -31,7 +31,7 @@ When nothing is supported, the response has a `no_match`, `no_route` or `no_conn
 
 | Capability | Endpoint | Returns |
 |---|---|---|
-| Search | `GET /search?q=` | `hits[]`: `kind` (disease, gene, symptom, pathway, patient_org), `id`, `label`, `matched`, `score`. Non-disease hits include `diseases[]`. Typos are tolerated. |
+| Search | `GET /search?q=` | `hits[]`: `kind` (disease, gene, symptom, pathway, patient_org), `id`, `label`, `matched`, `score`. Non-disease hits include `diseases[]`. Typos are tolerated. With no hits, `known_elsewhere[]` lists matching rare diseases that are not loaded (MONDO ID, gene, what adding it takes). |
 | | `GET /diseases` | All diseases with cluster and genes (for a picker). |
 | | `GET /disease/{id}` | Summary card: synonyms, genes, cluster members, patient groups, counts, `facts_from_papers[]`. |
 | Clustering | `GET /clusters` | Every cluster: members, top shared pathways and symptoms, asset counts. |
@@ -44,6 +44,7 @@ When nothing is supported, the response has a `no_match`, `no_route` or `no_conn
 | What next | `GET /disease/{id}/next-steps?explain=true` | `candidates[]` (cited actions built by code), `steps[]` (1 to 3 plain-language steps from gpt-oss, each ending with edge IDs in brackets), `expert_must_check[]`, `searched[]`, `disclaimer`. If the LLM is unavailable `steps` is empty and `llm_note` says why; show `candidates` instead. |
 | Biology | `GET /disease/{id}/biology` | `genes[]` (with `how_affected`), `pathways[]` and `symptoms[]`, the most specific first, each with `edge_ids`. |
 | 10× case | `GET /disease/{id}/ten-x` | Natural history study for this disease: `numbers` (own, relatives, completed, median months, `basis`), `usual_route[]`, `atlas_route[]`, `supported`, `own_studies[]`, `relative_studies[]`, `assumptions[]`, `validate_next[]`. All numbers come from registered studies. |
+| Landscape | `GET /disease/{id}/landscape` | `key_facts` (prevalence by place, onset, inheritance), `milestones.steps[]` (reached or not, with `edge_ids`), `trials` (`phases[]`, `finished`, `why_stopped[]`, `what_was_tested`), `funding` (`total_usd`, `top[]`, `in_cluster[]`), `where` (`cities[]` with lat/lon and study counts, `countries`, `recruiting_now[]`). Registry counts only. |
 | Evidence | `GET /edge/{id}` | One fact with its full provenance and `contradicted_by[]`. |
 | | `GET /disease/{id}/graph` | `nodes[]` (`id`, `label`, `type`) and `edges[]` (`id`, `source`, `target`, `predicate`, `evidence_type`, `confidence`) ready for any graph library. |
 | | `GET /contradictions` | Pairs of edges where a paper denies what another source asserts. |

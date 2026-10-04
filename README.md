@@ -44,17 +44,18 @@ Follow Maria, who leads a patient group for **MPS IIIC (Sanfilippo C)**, a disea
 | 4 | Open **Connections** | The map draws itself in stages. Click **Expand connections** to add patient groups and symptoms |
 | 5 | Click any line on the map, or any **Why?** button | A drawer with the source, date, strength and the quoted sentence |
 | 6 | Open **Research** | Existing natural history studies first, then three cited next steps |
-| 7 | Open **10× route** | A natural history study from scratch versus reusing what related diseases built, with real durations |
-| 8 | Search `cystic fibrosis` | An honest "nothing matches", with what was searched |
+| 7 | Open **Landscape** | The road to a treatment with the missing milestone marked, a world map of study sites (switch it to "Where it is more common"), how far trials got, why some stopped, and public funding |
+| 8 | Open **10× route** | A natural history study from scratch versus reusing what related diseases built, with real durations |
+| 9 | Search `cystic fibrosis` | "Not in the Atlas yet", with its real ID and gene and what adding it would take |
 
-Steps 5 and 8 are the two things the Atlas is built around: **nothing is shown without evidence, and gaps are stated instead of filled.**
+Steps 5 and 9 are the two things the Atlas is built around: **nothing is shown without evidence, and gaps are stated instead of filled.**
 
 | | |
 |---|---|
 | ![Intro](docs/screenshots/1-intro.png) | ![Home](docs/screenshots/2-home.png) |
 | ![Overview](docs/screenshots/3-overview.png) | ![Evidence drawer](docs/screenshots/5-evidence.png) |
-
-![Cited next steps](docs/screenshots/6-next-steps.png)
+| ![The road to a treatment](docs/screenshots/7-landscape-road.png) | ![Where studies run](docs/screenshots/8-world-map.png) |
+| ![Trial outcomes](docs/screenshots/9-trials.png) | ![Cited next steps](docs/screenshots/6-next-steps.png) |
 
 ---
 
@@ -71,14 +72,15 @@ The brief names four people. Each has a door on the home page.
 
 ## What is on a disease page
 
-Seven tabs, from least to most detail:
+Eight tabs, from least to most detail:
 
 | Tab | What it shows |
 |---|---|
-| **Overview** | One paragraph, five numbers, a one-line summary of every other tab |
+| **Overview** | One paragraph, three facts a family asks first (how common, age of onset, inheritance), five numbers, and a one-line summary of every other tab |
 | **Biology** | Disease → gene → mechanisms → symptoms, the most specific first |
 | **Connections** | The map, the related diseases with what is shared and what differs, and the cited path between them |
 | **Research** | Reusable studies and registries, three cited next steps, researchers |
+| **Landscape** | Milestones on the road to a treatment, a world map of study sites and reported prevalence, where families can take part now, how far trials went and why some stopped, public funding compared with related diseases |
 | **Communities** | Patient organisations (with the sentence from their own website), related communities |
 | **10× route** | Starting a natural history study: from scratch versus reusing relatives' work, for every disease |
 | **Evidence** | How many facts of each kind, and what papers say, with quotes and a second model's verdict |
@@ -93,6 +95,7 @@ Seven tabs, from least to most detail:
 | **Evidence integrity** | Every fact stores its source, date, strength and kind. Facts read from papers are kept only if the quoted sentence is in the abstract word for word, then a second model checks them. A check script fails the build if any rule is broken. |
 | **Patient progress** | Search → related disease → shared mechanism → existing study → patient group → cited next step, with "what an expert must check" beside it. |
 | **10× impact** | One milestone (a natural history study), real registered durations, stated assumptions, and no claimed saving without a source. |
+| **Beyond the brief** | The Landscape tab answers questions the brief does not ask but a patient group would: what is still missing, where can we take part, what went wrong before, who gets funded. A search for a disease outside the Atlas says what it is and what adding it takes. |
 | **Product craft** | Starts with one paragraph and grows on request; one evidence drawer for every claim; honest empty states. |
 | **Built with OpenAI** | gpt-oss (OpenAI's open-weight models) does three jobs: extract facts from abstracts, review each extracted fact, and word the next steps. Code verifies each one. |
 
@@ -134,7 +137,7 @@ The graph is built once, offline, and saved as small files. The website and API 
 
 ### What is in the graph
 
-22 diseases · 23 genes · 674 symptoms · 209 mechanisms · 342 clinical studies · 126 reusable assets · 233 grants · 606 researchers · 60 papers · 20 patient organisations, joined by about 3,960 facts. Full counts, including how many extracted facts were dropped and why, are in [`data/graph/STATS.md`](data/graph/STATS.md).
+22 diseases · 23 genes · 674 symptoms · 209 mechanisms · 342 clinical studies · 126 reusable assets · 233 grants · 606 researchers · 60 papers · 20 patient organisations, joined by about 3,960 facts. Around them: 1,618 study sites in 54 countries, prevalence figures for 20 diseases, and an index of 9,031 other rare diseases so a search outside the Atlas still gets an answer. Full counts, including how many extracted facts were dropped and why, are in [`data/graph/STATS.md`](data/graph/STATS.md).
 
 ---
 
@@ -149,7 +152,7 @@ uv run python -m src.graph.build     # downloads sources (about 230 MB) on the f
 
 The build runs these steps in order and stops if the evidence check fails:
 
-`download → biology → research → Gene Ontology → patient organisations → timelines → similarity → text-mined facts → review → connections → statistics → check`
+`download → biology → research → Gene Ontology → patient organisations → landscape → timelines → similarity → text-mined facts → review → connections → statistics → check`
 
 What to expect:
 
@@ -170,6 +173,7 @@ Changing the website needs Node 20+: `cd web && npm install && npm run build`.
 - **Patient organisations:** 5 were read by a person; 15 are linked because their own website names the disease repeatedly. Registry mentions are sentences from their sites, not verified registries.
 - **The Connectors ranking counts breadth only.** It does not yet weigh whether a study ran or how recent it is, so the top entry can be someone listed on withdrawn studies.
 - **Similarity uses Reactome pathways and HPO symptoms.** Four Batten genes have no Reactome pathway, so that cluster rests on symptoms; Gene Ontology fills the gap for navigation but not for scoring.
+- **Landscape figures are registry counts, not estimates.** "Ran to completion" is not "the treatment worked". Funding is NIH only (the most recent year of each grant), so it leaves out other countries, charities and industry. Prevalence is shown only where Orphadata reports a figure; a dark country means no reported figure. No cost-to-treatment or success probability is given, because there is no cited source for one.
 - **Desktop only.** There is no mobile layout, and the site is not deployed to a public URL.
 
 ---

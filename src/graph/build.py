@@ -15,6 +15,7 @@ STEPS = [
     "src.etl.go",               # Gene Ontology processes for the genes (second mechanism source)
     "src.etl.org_scrape",       # read patient organisations' own web pages (cached; no LLM)
     "src.etl.orgs",             # patient organisations: hand-checked CSV + what their pages say
+    "src.etl.landscape",        # prevalence, onset, trial outcomes and sites, index of diseases not loaded yet
     "src.etl.timelines",        # real durations of Sanfilippo natural history studies (for the 10x tab)
     "src.graph.similarity",     # similar_to edges and clusters
     "src.etl.filter_abstracts", # drop off-topic abstracts before extraction

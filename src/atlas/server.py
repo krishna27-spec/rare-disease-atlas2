@@ -116,6 +116,12 @@ def ten_x(disease_id: str):
     return call(atlas().ten_x, disease_id)
 
 
+@app.get("/disease/{disease_id}/landscape", tags=["Action"])
+def landscape(disease_id: str):
+    """How common and where, how far trials got and why some stopped, public funding, study sites, milestones."""
+    return call(atlas().landscape, disease_id)
+
+
 # ---- evidence
 @app.get("/edge/{edge_id}", tags=["Evidence"])
 def edge(edge_id: str):
