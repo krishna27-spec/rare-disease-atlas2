@@ -32,7 +32,7 @@ export default function Mechanism({ go }) {
               return (
                 <Card key={c.cluster} meta={`Rank ${i + 1} · cluster ${c.cluster}`} title={`${c.n_matching_diseases} of ${c.cluster_size} diseases run through it`}
                   foot={<Why ids={c.diseases.flatMap((d) => d.edge_ids).slice(0, 14)} title={`Cluster ${c.cluster} and ${query}`} />}>
-                  <div className="chips">{c.diseases.map((d) => <button key={d.id} className="chip" onClick={() => go({ view: "disease", id: d.id, mode: "full" })}>{d.name} →</button>)}</div>
+                  <div className="chips">{c.diseases.map((d) => <button key={d.id} className="chip" onClick={() => go({ view: "disease", id: d.id, mode: "overview" })}>{d.name} →</button>)}</div>
                   <dl className="kv" style={{ gridTemplateColumns: "150px 1fr", marginTop: 6 }}>
                     <dt>Patient groups</dt><dd>{c.patient_orgs.length ? c.patient_orgs.slice(0, 4).map((o) => o.name).join(", ") : "none recorded"}</dd>
                     <dt>Infrastructure</dt><dd>{Object.entries(inf).map(([k, v]) => `${v} ${k}${v > 1 ? "s" : ""}`).join(" · ").replace(/studys/g, "studies").replace(/registrys/g, "registries") || "none recorded"}</dd>

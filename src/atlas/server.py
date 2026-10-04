@@ -110,10 +110,10 @@ def biology(disease_id: str):
     return call(atlas().biology, disease_id)
 
 
-@app.get("/ten-x", tags=["Action"])
-def ten_x():
-    """The 10x case: a natural history study for MPS IIIC, from scratch versus reusing sister diseases."""
-    return atlas().ten_x()
+@app.get("/disease/{disease_id}/ten-x", tags=["Action"])
+def ten_x(disease_id: str):
+    """The 10x case: a natural history study for this disease, from scratch versus reusing what relatives built."""
+    return call(atlas().ten_x, disease_id)
 
 
 # ---- evidence

@@ -14,7 +14,7 @@ import Mechanism from "./views/Mechanism.jsx";
 // The place is kept in the URL hash (#disease/MONDO:0009657/full) so pages can be linked and Back works.
 const read = () => {
   const [view = "landing", id, mode] = decodeURIComponent(window.location.hash.slice(1)).split("/");
-  return { view: view || "landing", id, mode: mode || "full" };
+  return { view: view || "landing", id, mode: mode || "overview" };
 };
 
 export default function App() {
@@ -39,7 +39,7 @@ export default function App() {
         <header className="bar">
           <div className="wrap bar-in">
             <button className="brand" onClick={() => go({ view: "landing" })}><span className="brand-dot" />Rare Disease Atlas</button>
-            {at.view !== "landing" && <div style={{ flex: 1, maxWidth: 420 }} className="barsearch"><Search placeholder="Search" onDisease={(id) => go({ view: "disease", id, mode: at.mode })} /></div>}
+            {at.view !== "landing" && <div style={{ flex: 1, maxWidth: 420 }} className="barsearch"><Search placeholder="Search" onDisease={(id) => go({ view: "disease", id, mode: "overview" })} /></div>}
             <nav className="nav">
               <button className={at.view === "mechanism" ? "on" : ""} onClick={() => go({ view: "mechanism" })}>Mechanisms</button>
               <button className={at.view === "connectors" ? "on" : ""} onClick={() => go({ view: "connectors" })}>Connectors</button>
@@ -47,15 +47,14 @@ export default function App() {
             </nav>
           </div>
         </header>
-        <AnimatePresence mode="wait">
-          <motion.main key={at.view + (at.id || "") + (at.view === "disease" ? at.mode : "")} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}>
-            {at.view === "disease" && at.id ? <Disease id={at.id} mode={at.mode} go={go} />
-              : at.view === "mechanism" ? <Mechanism go={go} />
-              : at.view === "connectors" ? <Connectors go={go} />
-              : at.view === "about" ? <About />
-              : <Landing go={go} />}
-          </motion.main>
-        </AnimatePresence>
+        {/* keyed, so each page fades in on arrival; no exit animation, which keeps navigation instant and reliable */}
+        <motion.main key={at.view + (at.id || "")} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}>
+          {at.view === "disease" && at.id ? <Disease id={at.id} mode={at.mode} go={go} />
+            : at.view === "mechanism" ? <Mechanism go={go} />
+            : at.view === "connectors" ? <Connectors go={go} />
+            : at.view === "about" ? <About />
+            : <Landing go={go} />}
+        </motion.main>
       </div>
       <EvidenceDrawer state={ev} close={close} />
       <AnimatePresence>{intro && <Intro enter={enter} />}</AnimatePresence>

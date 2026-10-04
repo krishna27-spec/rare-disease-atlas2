@@ -43,7 +43,7 @@ When nothing is supported, the response has a `no_match`, `no_route` or `no_conn
 | What exists | `GET /disease/{id}/assets` | `own[]` (registries, natural history studies, trials) and `cluster_reusable[]`. |
 | What next | `GET /disease/{id}/next-steps?explain=true` | `candidates[]` (cited actions built by code), `steps[]` (1 to 3 plain-language steps from gpt-oss, each ending with edge IDs in brackets), `expert_must_check[]`, `searched[]`, `disclaimer`. If the LLM is unavailable `steps` is empty and `llm_note` says why; show `candidates` instead. |
 | Biology | `GET /disease/{id}/biology` | `genes[]` (with `how_affected`), `pathways[]` and `symptoms[]`, the most specific first, each with `edge_ids`. |
-| 10× case | `GET /ten-x` | Natural history study for MPS IIIC: `numbers`, `usual_route[]`, `atlas_route[]`, `own_studies[]`, `assumptions[]`, `validate_next[]`. All numbers come from registered studies. |
+| 10× case | `GET /disease/{id}/ten-x` | Natural history study for this disease: `numbers` (own, relatives, completed, median months, `basis`), `usual_route[]`, `atlas_route[]`, `supported`, `own_studies[]`, `relative_studies[]`, `assumptions[]`, `validate_next[]`. All numbers come from registered studies. |
 | Evidence | `GET /edge/{id}` | One fact with its full provenance and `contradicted_by[]`. |
 | | `GET /disease/{id}/graph` | `nodes[]` (`id`, `label`, `type`) and `edges[]` (`id`, `source`, `target`, `predicate`, `evidence_type`, `confidence`) ready for any graph library. |
 | | `GET /contradictions` | Pairs of edges where a paper denies what another source asserts. |
