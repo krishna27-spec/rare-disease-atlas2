@@ -1,0 +1,13 @@
+{
+  "contradictions": 0,
+  "text_mined_facts": 117,
+  "denied_facts": 0,
+  "note": "0 contradictions found among 117 text-mined facts (0 facts were denials; 0 of them deny something no other source asserts)",
+  "shared_people": 47,
+  "cross_cluster_people": 11,
+  "assets": 543,
+  "neighbour_rows": 110,
+  "connectors": 132,
+  "specific_pathways": 187,
+  "cross_cluster_connectors": 37
+}

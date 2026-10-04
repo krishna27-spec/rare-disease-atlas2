@@ -1,0 +1,6 @@
+name,url,diseases_served,mondo_ids,registry_or_study,date_checked,evidence_type,note
+Cure Sanfilippo Foundation,https://curesanfilippofoundation.org,Sanfilippo syndrome (MPS III),MONDO:0009655|MONDO:0009656|MONDO:0009657|MONDO:0009658,"not stated on homepage; mentions a Data Sharing Initiative",2026-10-04,curated,Homepage read 2026-10-04
+National MPS Society,https://mpssociety.org,"MPS I, II, III, IV, VI, VII, ML II/III",MONDO:0001586|MONDO:0010674|MONDO:0009655|MONDO:0009656|MONDO:0009657|MONDO:0009658,not mentioned on the page read,2026-10-04,curated,Page read 2026-10-04
+National Niemann-Pick Disease Foundation,https://nnpdf.org,Niemann-Pick ASMD and NPC,MONDO:0009757|MONDO:0011873,International Niemann-Pick Disease Registry (listed on site),2026-10-04,curated,Homepage read 2026-10-04
+National Tay-Sachs & Allied Diseases Association,https://www.ntsad.org,"Tay-Sachs, Canavan, GM1, Sandhoff",MONDO:0010100|MONDO:0010006|MONDO:0018149,"not stated; mentions a Virtual Biorepository",2026-10-04,curated,Homepage read 2026-10-04
+Batten Disease Support & Research Association,https://bdsrafoundation.org,Batten disease (NCLs; from the organisation name),MONDO:0009744|MONDO:0008769|MONDO:0008767|MONDO:0009745|MONDO:0011144|MONDO:0012588|MONDO:0010830,not checked (page content incomplete),2026-10-04,curated,Name and URL only; scope and registry not verified
